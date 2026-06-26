@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { Plus, Trash2, Target, Minus } from "lucide-react";
+import { Plus, Trash2, Target, Minus, BarChart3, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,6 +81,7 @@ function GoalCard({
   onChange: (g: Goal) => void;
   onDelete: () => void;
 }) {
+  const [showChart, setShowChart] = useState(false);
   const remaining = Math.max(goal.targetAmount - goal.saved, 0);
   const monthsLeft =
     goal.monthlyContribution > 0
@@ -155,6 +156,20 @@ function GoalCard({
         </div>
       </div>
 
+      <div className="flex justify-end">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs gap-1"
+          onClick={() => setShowChart((s) => !s)}
+          aria-pressed={showChart}
+        >
+          {showChart ? <EyeOff className="h-3 w-3" /> : <BarChart3 className="h-3 w-3" />}
+          {showChart ? "Ocultar gráfico" : "Ver gráfico"}
+        </Button>
+      </div>
+
+      {showChart && (
       <div className="h-40 -mx-2">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chart} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
@@ -187,6 +202,7 @@ function GoalCard({
           </AreaChart>
         </ResponsiveContainer>
       </div>
+      )}
     </article>
   );
 }
