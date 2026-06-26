@@ -1,6 +1,8 @@
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Wallet, Target, TrendingUp } from "lucide-react";
-import type { ComponentType } from "react";
+import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Wallet, Target, TrendingUp, LogOut, User as UserIcon } from "lucide-react";
+import { useEffect, useState, type ComponentType } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
 interface NavItem {
   to: string;
@@ -15,6 +17,48 @@ const NAV: NavItem[] = [
 
 export function AppLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    async function loadProfile() {
+      const { data } = await supabase.auth.getUser();
+      if (!active) return;
+      if (!data.user) {
+        setSignedIn(false);
+        setDisplayName(null);
+        return;
+      }
+      setSignedIn(true);
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      if (!active) return;
+      setDisplayName(prof?.display_name ?? data.user.email?.split("@")[0] ?? null);
+    }
+    loadProfile();
+    const { data: sub } = supabase.auth.onAuthStateChange(() => loadProfile());
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  const isAuth = pathname === "/auth";
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  }
+
+  if (isAuth) {
+    return <Outlet />;
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-3xl px-4 pt-6 pb-28">
@@ -23,10 +67,21 @@ export function AppLayout() {
             className="h-10 w-10 rounded-2xl"
             style={{ background: "var(--gradient-primary)" }}
           />
-          <div>
+          <div className="flex-1 min-w-0">
             <h1 className="text-lg font-semibold leading-tight">Bolso Leve</h1>
-            <p className="text-xs text-muted-foreground">Receitas, sonhos e investimentos</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {displayName ? `Olá, ${displayName}` : "Receitas, sonhos e investimentos"}
+            </p>
           </div>
+          {signedIn ? (
+            <Button variant="ghost" size="icon" aria-label="Sair" onClick={signOut}>
+              <LogOut className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button asChild size="sm" variant="outline" className="gap-1 rounded-full">
+              <Link to="/auth"><UserIcon className="h-4 w-4" /> Entrar</Link>
+            </Button>
+          )}
         </header>
         <Outlet />
       </div>

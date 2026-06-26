@@ -24,7 +24,7 @@ import {
   type TxType,
 } from "@/lib/finance-store";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Início — Bolso Leve" },

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -16,7 +17,7 @@ import {
 } from "recharts";
 import { useFinance, formatBRL, uid, type Investment } from "@/lib/finance-store";
 
-export const Route = createFileRoute("/investimentos")({
+export const Route = createFileRoute("/_authenticated/investimentos")({
   head: () => ({
     meta: [
       { title: "Investimentos — Bolso Leve" },
@@ -158,8 +159,12 @@ function AddInvestmentDialog({
   const [amount, setAmount] = useState("");
   const [pctCdi, setPctCdi] = useState("100"); // % do CDI para CDB
   const [customYield, setCustomYield] = useState("");
+  const [useCdiFormula, setUseCdiFormula] = useState(true);
 
-  const usaCDI = type === "CDB";
+  // Apenas títulos atrelados ao CDI fazem sentido com %CDI por padrão
+  const cdiByDefault = type === "CDB" || type === "Tesouro Direto";
+  const usaCDI = useCdiFormula;
+
   const yieldPct = usaCDI
     ? (cdi * (parseFloat(pctCdi) || 0)) / 100
     : parseFloat(customYield) || 0;
@@ -193,6 +198,13 @@ function AddInvestmentDialog({
             <Label>Valor aplicado</Label>
             <Input type="number" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" />
           </div>
+          <div className="flex items-center justify-between rounded-xl bg-card/60 border border-border/60 px-3 py-2">
+            <div>
+              <p className="text-sm font-medium">Usar fórmula do CDI</p>
+              <p className="text-[11px] text-muted-foreground">Ex.: 100% do CDI, 120% do CDI</p>
+            </div>
+            <Switch checked={useCdiFormula} onCheckedChange={setUseCdiFormula} />
+          </div>
           {usaCDI ? (
             <div className="grid gap-1.5">
               <Label>% do CDI</Label>
@@ -200,10 +212,10 @@ function AddInvestmentDialog({
                 type="number"
                 value={pctCdi}
                 onChange={(e) => setPctCdi(e.target.value)}
-                placeholder="100"
+                placeholder={cdiByDefault ? "100" : "120"}
               />
               <p className="text-xs text-muted-foreground">
-                Rendimento estimado: {yieldPct.toFixed(3)}% a.m.
+                CDI atual {cdi.toFixed(2)}% a.m. · Rendimento estimado: {yieldPct.toFixed(3)}% a.m.
               </p>
             </div>
           ) : (
