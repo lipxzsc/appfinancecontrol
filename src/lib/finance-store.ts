@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export type TxType = "receita" | "despesa";
 export interface Transaction {
@@ -42,13 +43,20 @@ const defaultState: FinanceState = {
 };
 
 let memory: FinanceState | null = null;
+let currentUserId: string | null = null;
+let cloudLoaded = false;
 const listeners = new Set<() => void>();
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+function storageKey() {
+  return currentUserId ? `finance-app-state::${currentUserId}` : KEY;
+}
 
 function load(): FinanceState {
   if (memory) return memory;
   if (typeof window === "undefined") return defaultState;
   try {
-    const raw = window.localStorage.getItem(KEY);
+    const raw = window.localStorage.getItem(storageKey());
     memory = raw ? { ...defaultState, ...JSON.parse(raw) } : defaultState;
   } catch {
     memory = defaultState;
@@ -56,12 +64,77 @@ function load(): FinanceState {
   return memory!;
 }
 
+function persistCloudDebounced(next: FinanceState) {
+  if (!currentUserId) return;
+  if (saveTimer) clearTimeout(saveTimer);
+  const uid = currentUserId;
+  saveTimer = setTimeout(() => {
+    supabase
+      .from("finance_data")
+      .upsert({ user_id: uid, data: next as unknown as Record<string, unknown> })
+      .then(({ error }) => {
+        if (error) console.error("[finance] cloud save failed", error.message);
+      });
+  }, 600);
+}
+
 function save(next: FinanceState) {
   memory = next;
   if (typeof window !== "undefined") {
-    window.localStorage.setItem(KEY, JSON.stringify(next));
+    window.localStorage.setItem(storageKey(), JSON.stringify(next));
   }
+  persistCloudDebounced(next);
   listeners.forEach((l) => l());
+}
+
+async function hydrateFromCloud(userId: string) {
+  currentUserId = userId;
+  cloudLoaded = false;
+  memory = null; // force per-user reload
+  const { data, error } = await supabase
+    .from("finance_data")
+    .select("data")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) {
+    console.error("[finance] cloud load failed", error.message);
+  }
+  if (data?.data) {
+    memory = { ...defaultState, ...(data.data as Partial<FinanceState>) };
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(storageKey(), JSON.stringify(memory));
+    }
+  } else {
+    // first-time user: seed cloud with whatever exists locally (or empty)
+    const initial = load();
+    await supabase.from("finance_data").upsert({
+      user_id: userId,
+      data: initial as unknown as Record<string, unknown>,
+    });
+  }
+  cloudLoaded = true;
+  listeners.forEach((l) => l());
+}
+
+if (typeof window !== "undefined") {
+  supabase.auth.getUser().then(({ data }) => {
+    if (data.user) hydrateFromCloud(data.user.id);
+  });
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === "SIGNED_IN" && session?.user) {
+      hydrateFromCloud(session.user.id);
+    }
+    if (event === "SIGNED_OUT") {
+      currentUserId = null;
+      cloudLoaded = false;
+      memory = null;
+      listeners.forEach((l) => l());
+    }
+  });
+}
+
+export function isCloudReady() {
+  return !currentUserId || cloudLoaded;
 }
 
 export function useFinance() {
