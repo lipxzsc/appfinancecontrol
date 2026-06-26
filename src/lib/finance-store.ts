@@ -71,7 +71,7 @@ function persistCloudDebounced(next: FinanceState) {
   saveTimer = setTimeout(() => {
     supabase
       .from("finance_data")
-      .upsert({ user_id: uid, data: next as unknown as Record<string, unknown> })
+      .upsert({ user_id: uid, data: next as never })
       .then(({ error }) => {
         if (error) console.error("[finance] cloud save failed", error.message);
       });
@@ -109,7 +109,7 @@ async function hydrateFromCloud(userId: string) {
     const initial = load();
     await supabase.from("finance_data").upsert({
       user_id: userId,
-      data: initial as unknown as Record<string, unknown>,
+      data: initial as never,
     });
   }
   cloudLoaded = true;
