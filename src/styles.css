@@ -53,6 +53,7 @@
   --color-pastel-blue: var(--pastel-blue);
   --color-pastel-pink: var(--pastel-pink);
   --color-pastel-green: var(--pastel-green);
+  --color-pastel-red: var(--pastel-red);
   --color-pastel-yellow: var(--pastel-yellow);
   --color-pastel-purple: var(--pastel-purple);
   --color-chart-1: var(--chart-1);
@@ -99,6 +100,7 @@
   --pastel-blue: oklch(0.82 0.09 230);
   --pastel-pink: oklch(0.85 0.08 350);
   --pastel-green: oklch(0.85 0.09 155);
+  --pastel-red: oklch(0.76 0.12 25);
   --pastel-yellow: oklch(0.88 0.1 90);
   --pastel-purple: oklch(0.78 0.09 305);
   --gradient-primary: linear-gradient(135deg, oklch(0.82 0.09 200), oklch(0.78 0.09 305));
@@ -139,6 +141,7 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.551 0.027 264.364);
+  --pastel-red: oklch(0.65 0.18 25);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
