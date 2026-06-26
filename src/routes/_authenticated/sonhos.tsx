@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { Plus, Trash2, Target, Minus, BarChart3, EyeOff } from "lucide-react";
+import { Plus, Trash2, Target, PiggyBank, BarChart3, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine,
 } from "recharts";
 import { useFinance, formatBRL, uid, type Goal } from "@/lib/finance-store";
 
@@ -82,31 +82,64 @@ function GoalCard({
   onDelete: () => void;
 }) {
   const [showChart, setShowChart] = useState(false);
-  const remaining = Math.max(goal.targetAmount - goal.saved, 0);
-  const monthsLeft =
-    goal.monthlyContribution > 0
-      ? Math.ceil(remaining / goal.monthlyContribution)
-      : Infinity;
+  const [depositOpen, setDepositOpen] = useState(false);
+  const deposits = goal.deposits ?? [];
+  const saved = deposits.length
+    ? deposits.reduce((s, d) => s + d.amount, 0)
+    : goal.saved;
+  const remaining = Math.max(goal.targetAmount - saved, 0);
   const pct = goal.targetAmount > 0
-    ? Math.min(100, (goal.saved / goal.targetAmount) * 100)
+    ? Math.min(100, (saved / goal.targetAmount) * 100)
     : 0;
 
-  const chart = useMemo(() => {
-    const data: { mes: string; valor: number }[] = [];
-    if (!isFinite(monthsLeft) || monthsLeft <= 0) {
-      data.push({ mes: "Agora", valor: goal.saved });
-      return data;
+  // Média mensal real baseada nos depósitos do usuário
+  const avgMonthly = useMemo(() => {
+    if (!deposits.length) return 0;
+    const byMonth = new Map<string, number>();
+    for (const d of deposits) {
+      const k = d.date.slice(0, 7);
+      byMonth.set(k, (byMonth.get(k) ?? 0) + d.amount);
     }
-    const total = Math.min(monthsLeft, 60);
-    for (let i = 0; i <= total; i++) {
-      const v = Math.min(goal.targetAmount, goal.saved + goal.monthlyContribution * i);
-      data.push({ mes: i === 0 ? "Hoje" : `+${i}m`, valor: Math.round(v) });
-    }
-    return data;
-  }, [goal, monthsLeft]);
+    const total = [...byMonth.values()].reduce((s, v) => s + v, 0);
+    return total / byMonth.size;
+  }, [deposits]);
 
-  const adjustSaved = (delta: number) =>
-    onChange({ ...goal, saved: Math.max(0, goal.saved + delta) });
+  const monthsLeft = avgMonthly > 0 ? Math.ceil(remaining / avgMonthly) : Infinity;
+
+  // Dados do gráfico: barras por mês de depósito (estilo cofrinho)
+  const chart = useMemo(() => {
+    const byMonth = new Map<string, number>();
+    for (const d of deposits) {
+      const k = d.date.slice(0, 7);
+      byMonth.set(k, (byMonth.get(k) ?? 0) + d.amount);
+    }
+    const sorted = [...byMonth.entries()].sort(([a], [b]) => a.localeCompare(b));
+    return sorted.map(([k, v]) => {
+      const [y, m] = k.split("-");
+      const labels = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+      return { mes: `${labels[+m - 1]}/${y.slice(2)}`, valor: Math.round(v) };
+    });
+  }, [deposits]);
+
+  const pastels = [
+    "var(--pastel-purple)",
+    "var(--pastel-pink)",
+    "var(--pastel-blue)",
+    "var(--pastel-green)",
+    "var(--pastel-yellow)",
+  ];
+
+  const addDeposit = (amount: number, date: string) => {
+    const next: Goal = {
+      ...goal,
+      deposits: [...deposits, { id: uid(), amount, date }],
+    };
+    onChange(next);
+  };
+  const removeLastDeposit = () => {
+    if (!deposits.length) return;
+    onChange({ ...goal, deposits: deposits.slice(0, -1) });
+  };
 
   return (
     <article
@@ -133,30 +166,37 @@ function GoalCard({
 
       <div>
         <div className="flex items-end justify-between text-sm">
-          <span className="text-muted-foreground">{formatBRL(goal.saved)} guardado</span>
+          <span className="text-muted-foreground">{formatBRL(saved)} guardado</span>
           <span className="font-medium">{formatBRL(goal.targetAmount)}</span>
         </div>
         <Progress value={pct} className="mt-2 h-2" />
         <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
           <span>
             {isFinite(monthsLeft)
-              ? monthsLeft === 0
+              ? remaining === 0
                 ? "Objetivo alcançado 🎉"
-                : `Faltam ${monthsLeft} ${monthsLeft === 1 ? "mês" : "meses"}`
-              : "Defina um aporte mensal"}
+                : `~${monthsLeft} ${monthsLeft === 1 ? "mês" : "meses"} no ritmo atual`
+              : "Registre um depósito pra estimar o tempo"}
           </span>
-          <div className="flex items-center gap-1">
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => adjustSaved(-goal.monthlyContribution)}>
-              <Minus className="h-3 w-3" />
-            </Button>
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => adjustSaved(goal.monthlyContribution)}>
-              <Plus className="h-3 w-3" />
-            </Button>
-          </div>
+          <DepositDialog
+            open={depositOpen}
+            onOpenChange={setDepositOpen}
+            onAdd={addDeposit}
+            goalName={goal.name}
+          />
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs"
+          onClick={removeLastDeposit}
+          disabled={!deposits.length}
+        >
+          Desfazer último
+        </Button>
         <Button
           variant="ghost"
           size="sm"
@@ -165,45 +205,117 @@ function GoalCard({
           aria-pressed={showChart}
         >
           {showChart ? <EyeOff className="h-3 w-3" /> : <BarChart3 className="h-3 w-3" />}
-          {showChart ? "Ocultar gráfico" : "Ver gráfico"}
+          {showChart ? "Ocultar cofrinho" : "Ver cofrinho"}
         </Button>
       </div>
 
       {showChart && (
-      <div className="h-40 -mx-2">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chart} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id={`g-${goal.id}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--pastel-purple)" stopOpacity={0.7} />
-                <stop offset="100%" stopColor="var(--pastel-purple)" stopOpacity={0.05} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="mes" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} axisLine={false} tickLine={false} />
-            <YAxis hide />
-            <Tooltip
-              contentStyle={{
-                background: "var(--card)",
-                border: "1px solid var(--border)",
-                borderRadius: 12,
-                color: "var(--foreground)",
-                fontSize: 12,
-              }}
-              formatter={(v: number) => formatBRL(v)}
-            />
-            <Area
-              type="monotone"
-              dataKey="valor"
-              stroke="var(--pastel-purple)"
-              strokeWidth={2}
-              fill={`url(#g-${goal.id})`}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+      <div className="rounded-2xl bg-card/40 border border-border/60 p-3">
+        {chart.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-6 text-center text-xs text-muted-foreground">
+            <PiggyBank className="h-8 w-8 opacity-60" />
+            Cofrinho vazio. Guarde um valor pra ver crescer!
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
+              <span>Seus depósitos</span>
+              <span>Meta {formatBRL(goal.targetAmount)}</span>
+            </div>
+            <div className="h-44 -mx-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chart} margin={{ top: 14, right: 8, left: 0, bottom: 0 }} barCategoryGap="25%">
+                  <XAxis dataKey="mes" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis hide />
+                  <Tooltip
+                    cursor={{ fill: "color-mix(in oklab, var(--pastel-purple) 12%, transparent)" }}
+                    contentStyle={{
+                      background: "var(--card)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 12,
+                      color: "var(--foreground)",
+                      fontSize: 12,
+                    }}
+                    formatter={(v: number) => [formatBRL(v), "Guardado"]}
+                  />
+                  <ReferenceLine
+                    y={goal.targetAmount}
+                    stroke="var(--pastel-green)"
+                    strokeDasharray="4 4"
+                    label={{ value: "🎯", position: "right", fill: "var(--pastel-green)", fontSize: 14 }}
+                  />
+                  <Bar dataKey="valor" radius={[14, 14, 6, 6]} label={{ position: "top", fill: "var(--foreground)", fontSize: 10, formatter: (v: number) => formatBRL(v) }}>
+                    {chart.map((_, i) => (
+                      <Cell key={i} fill={pastels[i % pastels.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </>
+        )}
       </div>
       )}
     </article>
+  );
+}
+
+function DepositDialog({
+  open, onOpenChange, onAdd, goalName,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onAdd: (amount: number, date: string) => void;
+  goalName: string;
+}) {
+  const today = new Date().toISOString().slice(0, 10);
+  const [amount, setAmount] = useState("");
+  const [date, setDate] = useState(today);
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (v) { setAmount(""); setDate(today); } }}>
+      <DialogTrigger asChild>
+        <Button size="sm" className="h-7 gap-1 rounded-full text-xs">
+          <PiggyBank className="h-3.5 w-3.5" /> Guardei
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <PiggyBank className="h-4 w-4" /> Guardar para {goalName}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <Label>Quanto você guardou?</Label>
+            <Input
+              type="number"
+              inputMode="decimal"
+              autoFocus
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0,00"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Quando?</Label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            onClick={() => {
+              const a = parseFloat(amount);
+              if (!a || a <= 0) return;
+              onAdd(a, date);
+              onOpenChange(false);
+            }}
+          >
+            Adicionar ao cofrinho
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -212,7 +324,6 @@ function AddGoalDialog({ onAdd }: { onAdd: (g: Goal) => void }) {
   const [preset, setPreset] = useState(PRESETS[0]);
   const [name, setName] = useState("");
   const [target, setTarget] = useState("");
-  const [monthly, setMonthly] = useState("");
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -258,8 +369,10 @@ function AddGoalDialog({ onAdd }: { onAdd: (g: Goal) => void }) {
               <Input type="number" inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} placeholder="0,00" />
             </div>
             <div className="grid gap-1.5">
-              <Label>Aporte/mês</Label>
-              <Input type="number" inputMode="decimal" value={monthly} onChange={(e) => setMonthly(e.target.value)} placeholder="0,00" />
+              <Label className="text-muted-foreground">Ícone</Label>
+              <div className="h-9 rounded-md border border-border/60 grid place-items-center text-xl">
+                {preset.icon}
+              </div>
             </div>
           </div>
         </div>
@@ -267,21 +380,20 @@ function AddGoalDialog({ onAdd }: { onAdd: (g: Goal) => void }) {
           <Button
             onClick={() => {
               const t = parseFloat(target);
-              const m = parseFloat(monthly);
               if (!t || t <= 0) return;
               onAdd({
                 id: uid(),
                 name: name || preset.name,
                 icon: preset.icon,
                 targetAmount: t,
-                monthlyContribution: m || 0,
+                monthlyContribution: 0,
                 saved: 0,
+                deposits: [],
                 createdAt: new Date().toISOString(),
               });
               setOpen(false);
               setName("");
               setTarget("");
-              setMonthly("");
             }}
           >
             Adicionar
