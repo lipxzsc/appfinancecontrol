@@ -301,6 +301,3 @@ function AddTxDialog({
     </Dialog>
   );
 }
-    </div>
-  );
-}
