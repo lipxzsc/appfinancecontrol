@@ -1,6 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { Plus, Trash2, ArrowUpCircle, ArrowDownCircle, PiggyBank, Sparkles } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  PiggyBank,
+  Sparkles,
+  Briefcase,
+  Laptop,
+  Gift,
+  CircleHelp,
+  Receipt,
+  Home,
+  UtensilsCrossed,
+  Fuel,
+  Landmark,
+  Gamepad2,
+  HeartPulse,
+  Bus,
+  GraduationCap,
+  Check,
+} from "lucide-react";
 import { MonthCarousel } from "@/components/month-carousel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +41,48 @@ import {
   monthKey,
   uid,
   type TxType,
+  type TxCategory,
 } from "@/lib/finance-store";
+
+const RECEITA_CATEGORIES: { value: TxCategory; label: string; icon: React.ElementType }[] = [
+  { value: "salario", label: "Salário", icon: Briefcase },
+  { value: "freelancer", label: "Freelancer", icon: Laptop },
+  { value: "extra", label: "Extra", icon: Gift },
+  { value: "outros_receita", label: "Outros", icon: CircleHelp },
+];
+
+const DESPESA_CATEGORIES: { value: TxCategory; label: string; icon: React.ElementType }[] = [
+  { value: "contas", label: "Contas", icon: Receipt },
+  { value: "moradia", label: "Moradia", icon: Home },
+  { value: "alimentacao", label: "Alimentação", icon: UtensilsCrossed },
+  { value: "combustivel", label: "Combustível", icon: Fuel },
+  { value: "taxas", label: "Taxas", icon: Landmark },
+  { value: "lazer", label: "Lazer", icon: Gamepad2 },
+  { value: "saude", label: "Saúde", icon: HeartPulse },
+  { value: "transporte", label: "Transporte", icon: Bus },
+  { value: "educacao", label: "Educação", icon: GraduationCap },
+  { value: "outros_despesa", label: "Outros", icon: CircleHelp },
+];
+
+function categoryFor(type: TxType) {
+  return type === "receita" ? RECEITA_CATEGORIES : DESPESA_CATEGORIES;
+}
+
+function defaultCategory(type: TxType): TxCategory {
+  return type === "receita" ? "salario" : "contas";
+}
+
+function labelForCategory(category?: TxCategory) {
+  if (!category) return "";
+  const all = [...RECEITA_CATEGORIES, ...DESPESA_CATEGORIES];
+  return all.find((c) => c.value === category)?.label ?? "";
+}
+
+function iconForCategory(category?: TxCategory) {
+  if (!category) return CircleHelp;
+  const all = [...RECEITA_CATEGORIES, ...DESPESA_CATEGORIES];
+  return all.find((c) => c.value === category)?.icon ?? CircleHelp;
+}
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -80,7 +140,7 @@ function Index() {
           <MiniStat label="Sobra anterior" value={formatBRL(totals.carryOver)} color="pastel-blue" />
           <MiniStat label="Rendimentos" value={formatBRL(totals.rendimentoEstimado)} color="pastel-purple" />
           <MiniStat label="Receitas" value={formatBRL(totals.receitasMes)} color="pastel-green" />
-          <MiniStat label="Despesas" value={formatBRL(totals.despesasMes)} color="pastel-pink" />
+          <MiniStat label="Despesas" value={formatBRL(totals.despesasMes)} color="pastel-red" />
         </div>
       </section>
 
@@ -99,43 +159,57 @@ function Index() {
             Nenhum lançamento neste mês ainda.
           </li>
         )}
-        {monthTxs.map((t) => (
-          <li
-            key={t.id}
-            className="flex items-center gap-3 rounded-2xl bg-card/70 border border-border/60 px-4 py-3"
-          >
-            {t.type === "receita" ? (
-              <ArrowUpCircle className="h-6 w-6" style={{ color: "var(--pastel-green)" }} />
-            ) : (
-              <ArrowDownCircle className="h-6 w-6" style={{ color: "var(--pastel-pink)" }} />
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="truncate text-sm font-medium">{t.description || (t.type === "receita" ? "Receita" : "Despesa")}</p>
-              <p className="text-xs text-muted-foreground">
-                {new Date(t.date + "T00:00:00").toLocaleDateString("pt-BR")}
-              </p>
-            </div>
-            <span
-              className="text-sm font-semibold"
-              style={{ color: t.type === "receita" ? "var(--pastel-green)" : "var(--pastel-pink)" }}
+        {monthTxs.map((t) => {
+          const isReceita = t.type === "receita";
+          const color = isReceita ? "var(--pastel-green)" : "var(--pastel-red)";
+          const Icon = iconForCategory(t.category);
+          return (
+            <li
+              key={t.id}
+              className="flex items-center gap-3 rounded-2xl bg-card/70 border border-border/60 px-4 py-3"
             >
-              {t.type === "receita" ? "+" : "-"}{formatBRL(t.amount)}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Excluir"
-              onClick={() =>
-                update((s) => ({
-                  ...s,
-                  transactions: s.transactions.filter((x) => x.id !== t.id),
-                }))
-              }
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </li>
-        ))}
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background/60"
+                style={{ color }}
+              >
+                <Icon className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="truncate text-sm font-medium">
+                  {t.description || (isReceita ? "Receita" : "Despesa")}
+                </p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>{new Date(t.date + "T00:00:00").toLocaleDateString("pt-BR")}</span>
+                  {t.category && (
+                    <>
+                      <span className="text-border">•</span>
+                      <span style={{ color }}>{labelForCategory(t.category)}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <span
+                className="text-sm font-semibold"
+                style={{ color }}
+              >
+                {isReceita ? "+" : "-"}{formatBRL(t.amount)}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Excluir"
+                onClick={() =>
+                  update((s) => ({
+                    ...s,
+                    transactions: s.transactions.filter((x) => x.id !== t.id),
+                  }))
+                }
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
@@ -213,6 +287,7 @@ function AddTxDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<TxType>("receita");
+  const [category, setCategory] = useState<TxCategory>(defaultCategory("receita"));
   const [desc, setDesc] = useState("");
   const [amount, setAmount] = useState("");
   const today = new Date();
@@ -228,7 +303,15 @@ function AddTxDialog({
     setDesc("");
     setAmount("");
     setType("receita");
+    setCategory(defaultCategory("receita"));
   };
+
+  const handleTypeChange = (next: TxType) => {
+    setType(next);
+    setCategory(defaultCategory(next));
+  };
+
+  const categories = categoryFor(type);
 
   return (
     <Dialog
@@ -248,17 +331,52 @@ function AddTxDialog({
           <Plus className="h-4 w-4" /> Novo
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>Novo lançamento</DialogTitle>
         </DialogHeader>
-        <Tabs value={type} onValueChange={(v) => setType(v as TxType)}>
+        <Tabs value={type} onValueChange={(v) => handleTypeChange(v as TxType)}>
           <TabsList className="grid grid-cols-2 w-full">
-            <TabsTrigger value="receita">Receita</TabsTrigger>
-            <TabsTrigger value="despesa">Despesa</TabsTrigger>
+            <TabsTrigger
+              value="receita"
+              className="data-[state=active]:bg-pastel-green/20 data-[state=active]:text-pastel-green"
+            >
+              Receita
+            </TabsTrigger>
+            <TabsTrigger
+              value="despesa"
+              className="data-[state=active]:bg-pastel-red/20 data-[state=active]:text-pastel-red"
+            >
+              Despesa
+            </TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="grid gap-3 pt-2">
+          <div className="grid gap-1.5">
+            <Label>Categoria</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {categories.map((c) => {
+                const Icon = c.icon;
+                const selected = category === c.value;
+                return (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => setCategory(c.value)}
+                    className="flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 px-2 py-2 text-xs font-medium transition-colors"
+                    style={{
+                      borderColor: selected ? `var(--${type === "receita" ? "pastel-green" : "pastel-red"})` : undefined,
+                      color: selected ? `var(--${type === "receita" ? "pastel-green" : "pastel-red"})` : undefined,
+                    }}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {c.label}
+                    {selected && <Check className="h-3 w-3 ml-auto" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div className="grid gap-1.5">
             <Label>Descrição</Label>
             <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Ex.: Salário, Mercado" />
@@ -286,6 +404,7 @@ function AddTxDialog({
               onAdd({
                 id: uid(),
                 type,
+                category,
                 amount: v,
                 description: desc,
                 date,
