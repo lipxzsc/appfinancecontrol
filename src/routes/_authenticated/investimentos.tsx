@@ -63,10 +63,6 @@ function InvestPage() {
         </div>
       </section>
 
-      <CDIBlock
-        cdi={state.cdiMonthlyPct}
-        onChange={(v) => update((s) => ({ ...s, cdiMonthlyPct: v }))}
-      />
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold">Carteira</h3>
         <AddInvestmentDialog
@@ -119,29 +115,6 @@ function InvestPage() {
       </ul>
 
       <Simulator cdi={state.cdiMonthlyPct} />
-    </div>
-  );
-}
-
-function CDIBlock({ cdi, onChange }: { cdi: number; onChange: (v: number) => void }) {
-  return (
-    <div className="rounded-2xl bg-card/70 border border-border/60 px-4 py-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium">Taxa CDI mensal</p>
-          <p className="text-xs text-muted-foreground">Ajustável para refletir o cenário atual</p>
-        </div>
-        <span className="text-lg font-semibold" style={{ color: "var(--pastel-blue)" }}>
-          {cdi.toFixed(2)}%
-        </span>
-      </div>
-      <Slider
-        value={[cdi]}
-        min={0}
-        max={3}
-        step={0.05}
-        onValueChange={(v) => onChange(Number(v[0].toFixed(2)))}
-      />
     </div>
   );
 }
