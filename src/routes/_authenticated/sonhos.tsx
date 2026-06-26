@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { useFinance, formatBRL, uid, type Goal } from "@/lib/finance-store";
 
-export const Route = createFileRoute("/sonhos")({
+export const Route = createFileRoute("/_authenticated/sonhos")({
   head: () => ({
     meta: [
       { title: "Sonhos e metas — Bolso Leve" },

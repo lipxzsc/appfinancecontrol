@@ -9,86 +9,91 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SonhosRouteImport } from './routes/sonhos'
-import { Route as InvestimentosRouteImport } from './routes/investimentos'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedSonhosRouteImport } from './routes/_authenticated/sonhos'
+import { Route as AuthenticatedInvestimentosRouteImport } from './routes/_authenticated/investimentos'
 
-const SonhosRoute = SonhosRouteImport.update({
-  id: '/sonhos',
-  path: '/sonhos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InvestimentosRoute = InvestimentosRouteImport.update({
-  id: '/investimentos',
-  path: '/investimentos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/_authenticated/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSonhosRoute = AuthenticatedSonhosRouteImport.update({
+  id: '/_authenticated/sonhos',
+  path: '/sonhos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedInvestimentosRoute =
+  AuthenticatedInvestimentosRouteImport.update({
+    id: '/_authenticated/investimentos',
+    path: '/investimentos',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/investimentos': typeof InvestimentosRoute
-  '/sonhos': typeof SonhosRoute
+  '/investimentos': typeof AuthenticatedInvestimentosRoute
+  '/sonhos': typeof AuthenticatedSonhosRoute
+  '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/investimentos': typeof InvestimentosRoute
-  '/sonhos': typeof SonhosRoute
+  '/investimentos': typeof AuthenticatedInvestimentosRoute
+  '/sonhos': typeof AuthenticatedSonhosRoute
+  '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/investimentos': typeof InvestimentosRoute
-  '/sonhos': typeof SonhosRoute
+  '/_authenticated/investimentos': typeof AuthenticatedInvestimentosRoute
+  '/_authenticated/sonhos': typeof AuthenticatedSonhosRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/investimentos' | '/sonhos'
+  fullPaths: '/investimentos' | '/sonhos' | '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/investimentos' | '/sonhos'
-  id: '__root__' | '/' | '/investimentos' | '/sonhos'
+  to: '/investimentos' | '/sonhos' | '/'
+  id:
+    | '__root__'
+    | '/_authenticated/investimentos'
+    | '/_authenticated/sonhos'
+    | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  InvestimentosRoute: typeof InvestimentosRoute
-  SonhosRoute: typeof SonhosRoute
+  AuthenticatedInvestimentosRoute: typeof AuthenticatedInvestimentosRoute
+  AuthenticatedSonhosRoute: typeof AuthenticatedSonhosRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sonhos': {
-      id: '/sonhos'
-      path: '/sonhos'
-      fullPath: '/sonhos'
-      preLoaderRoute: typeof SonhosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/investimentos': {
-      id: '/investimentos'
-      path: '/investimentos'
-      fullPath: '/investimentos'
-      preLoaderRoute: typeof InvestimentosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/sonhos': {
+      id: '/_authenticated/sonhos'
+      path: '/sonhos'
+      fullPath: '/sonhos'
+      preLoaderRoute: typeof AuthenticatedSonhosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/investimentos': {
+      id: '/_authenticated/investimentos'
+      path: '/investimentos'
+      fullPath: '/investimentos'
+      preLoaderRoute: typeof AuthenticatedInvestimentosRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  InvestimentosRoute: InvestimentosRoute,
-  SonhosRoute: SonhosRoute,
+  AuthenticatedInvestimentosRoute: AuthenticatedInvestimentosRoute,
+  AuthenticatedSonhosRoute: AuthenticatedSonhosRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

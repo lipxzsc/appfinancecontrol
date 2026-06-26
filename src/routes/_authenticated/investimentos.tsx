@@ -16,7 +16,7 @@ import {
 } from "recharts";
 import { useFinance, formatBRL, uid, type Investment } from "@/lib/finance-store";
 
-export const Route = createFileRoute("/investimentos")({
+export const Route = createFileRoute("/_authenticated/investimentos")({
   head: () => ({
     meta: [
       { title: "Investimentos — Bolso Leve" },
