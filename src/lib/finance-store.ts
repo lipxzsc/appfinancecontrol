@@ -16,6 +16,7 @@ export interface Goal {
   targetAmount: number;
   monthlyContribution: number;
   saved: number;
+  deposits?: { id: string; amount: number; date: string }[];
   createdAt: string;
 }
 export interface Investment {
