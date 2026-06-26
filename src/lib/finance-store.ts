@@ -2,9 +2,26 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type TxType = "receita" | "despesa";
+export type TxCategory =
+  | "salario"
+  | "freelancer"
+  | "extra"
+  | "outros_receita"
+  | "contas"
+  | "moradia"
+  | "alimentacao"
+  | "combustivel"
+  | "taxas"
+  | "lazer"
+  | "saude"
+  | "transporte"
+  | "educacao"
+  | "outros_despesa";
+
 export interface Transaction {
   id: string;
   type: TxType;
+  category?: TxCategory;
   description: string;
   amount: number;
   date: string; // ISO yyyy-mm-dd
