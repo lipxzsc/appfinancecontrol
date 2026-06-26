@@ -174,8 +174,10 @@ function GoogleIcon() {
 }
 
 function translate(msg: string) {
-  if (/invalid login credentials/i.test(msg)) return "E-mail ou senha incorretos";
-  if (/user already registered/i.test(msg)) return "Esse e-mail já está cadastrado";
+  if (/invalid login credentials/i.test(msg))
+    return "E-mail ou senha incorretos. Se você criou a conta com Google, use \"Continuar com Google\".";
+  if (/user already registered/i.test(msg))
+    return "Esse e-mail já está cadastrado. Tente entrar — se você usou Google antes, clique em \"Continuar com Google\".";
   if (/password should be at least/i.test(msg)) return "A senha precisa ter pelo menos 6 caracteres";
   return msg;
 }
