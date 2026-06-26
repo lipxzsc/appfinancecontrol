@@ -156,7 +156,9 @@ function GoalCard({
         <div className="flex-1 min-w-0">
           <p className="font-semibold truncate">{goal.name}</p>
           <p className="text-xs text-muted-foreground">
-            Aporte mensal {formatBRL(goal.monthlyContribution)}
+            {deposits.length
+              ? `${deposits.length} ${deposits.length === 1 ? "depósito" : "depósitos"} · média ${formatBRL(avgMonthly)}/mês`
+              : "Sem depósitos ainda"}
           </p>
         </div>
         <Button variant="ghost" size="icon" onClick={onDelete} aria-label="Excluir meta">
