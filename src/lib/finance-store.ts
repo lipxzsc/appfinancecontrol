@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 export type TxType = "receita" | "despesa";
 export type TxCategory =
   | "salario"
+  | "renda_extra"
+  | "recebiveis"
   | "freelancer"
   | "extra"
   | "outros_receita"
@@ -13,6 +15,7 @@ export type TxCategory =
   | "combustivel"
   | "taxas"
   | "lazer"
+  | "streamings"
   | "saude"
   | "transporte"
   | "educacao"
