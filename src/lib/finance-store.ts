@@ -49,6 +49,8 @@ export interface FinanceState {
   goals: Goal[];
   investments: Investment[];
   cdiMonthlyPct: number;
+  /** Limite de orçamento mensal por categoria de despesa (em R$). */
+  budgets?: Partial<Record<TxCategory, number>>;
 }
 
 const KEY = "finance-app-state-v1";
@@ -58,6 +60,7 @@ const defaultState: FinanceState = {
   goals: [],
   investments: [],
   cdiMonthlyPct: 0.9,
+  budgets: {},
 };
 
 let memory: FinanceState | null = null;
