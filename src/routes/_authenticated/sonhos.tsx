@@ -16,7 +16,7 @@ import { useFinance, formatBRL, uid, type Goal } from "@/lib/finance-store";
 export const Route = createFileRoute("/_authenticated/sonhos")({
   head: () => ({
     meta: [
-      { title: "Sonhos e metas — Bolso Leve" },
+      { title: "Sonhos e metas — FinControl" },
       { name: "description", content: "Planeje suas metas com aportes mensais e veja em quanto tempo conquistá-las." },
     ],
   }),

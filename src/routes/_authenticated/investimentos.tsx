@@ -20,7 +20,7 @@ import { useFinance, formatBRL, uid, type Investment } from "@/lib/finance-store
 export const Route = createFileRoute("/_authenticated/investimentos")({
   head: () => ({
     meta: [
-      { title: "Investimentos — Bolso Leve" },
+      { title: "Investimentos — FinControl" },
       { name: "description", content: "Simule investimentos em CDB, FIIs, Ações, Tesouro Direto com juros compostos." },
     ],
   }),
