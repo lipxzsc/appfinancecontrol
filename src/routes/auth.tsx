@@ -15,8 +15,8 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Entrar — Bolso Leve" },
-      { name: "description", content: "Entre ou cadastre-se no Bolso Leve para sincronizar suas finanças." },
+      { title: "Entrar — FinControl" },
+      { name: "description", content: "Entre ou cadastre-se no FinControl para sincronizar suas finanças." },
     ],
   }),
   component: AuthPage,
@@ -90,7 +90,7 @@ function AuthPage() {
           <div className="mx-auto h-10 w-10 rounded-2xl grid place-items-center" style={{ background: "var(--gradient-primary)" }}>
             <Sparkles className="h-5 w-5 text-foreground" />
           </div>
-          <h1 className="text-xl font-semibold">Bolso Leve</h1>
+          <h1 className="text-xl font-semibold">FinControl</h1>
           <p className="text-xs text-muted-foreground">
             {mode === "login" ? "Entre para acessar suas finanças" : "Crie sua conta em segundos"}
           </p>
