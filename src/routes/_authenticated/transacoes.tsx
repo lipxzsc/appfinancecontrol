@@ -87,8 +87,8 @@ function iconForCategory(category?: TxCategory) {
 export const Route = createFileRoute("/_authenticated/transacoes")({
   head: () => ({
     meta: [
-      { title: "Início — Bolso Leve" },
-      { name: "description", content: "Receitas, despesas e saldo do mês com sobras automáticas." },
+      { title: "Transações — FinControl" },
+      { name: "description", content: "Adicione receitas e despesas; as sobras vão para o próximo mês." },
     ],
   }),
   component: Index,
