@@ -4,21 +4,19 @@ import {
   Plus,
   Trash2,
   PiggyBank,
-  Sparkles,
   Briefcase,
-  Laptop,
-  Gift,
+  Wallet,
+  HandCoins,
   CircleHelp,
   Receipt,
-  Home,
   UtensilsCrossed,
-  Fuel,
   Landmark,
   Gamepad2,
   HeartPulse,
   Bus,
-  GraduationCap,
-  Check,
+  Tv,
+  ArrowDownCircle,
+  ArrowUpCircle,
 } from "lucide-react";
 import { MonthCarousel } from "@/components/month-carousel";
 import { Button } from "@/components/ui/button";
@@ -32,11 +30,9 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useFinance,
   formatBRL,
-  computeMonthBalances,
   txMonthKey,
   monthKey,
   uid,
@@ -44,40 +40,44 @@ import {
   type TxCategory,
 } from "@/lib/finance-store";
 
+/** Categorias comuns de receita exibidas como chips com ícone. */
 const RECEITA_CATEGORIES: { value: TxCategory; label: string; icon: React.ElementType }[] = [
   { value: "salario", label: "Salário", icon: Briefcase },
-  { value: "freelancer", label: "Freelancer", icon: Laptop },
-  { value: "extra", label: "Extra", icon: Gift },
+  { value: "renda_extra", label: "Renda extra", icon: HandCoins },
+  { value: "recebiveis", label: "Recebíveis", icon: Wallet },
   { value: "outros_receita", label: "Outros", icon: CircleHelp },
 ];
 
+/** Categorias comuns de despesa exibidas como chips com ícone. */
 const DESPESA_CATEGORIES: { value: TxCategory; label: string; icon: React.ElementType }[] = [
   { value: "contas", label: "Contas", icon: Receipt },
-  { value: "moradia", label: "Moradia", icon: Home },
-  { value: "alimentacao", label: "Alimentação", icon: UtensilsCrossed },
-  { value: "combustivel", label: "Combustível", icon: Fuel },
   { value: "taxas", label: "Taxas", icon: Landmark },
-  { value: "lazer", label: "Lazer", icon: Gamepad2 },
-  { value: "saude", label: "Saúde", icon: HeartPulse },
   { value: "transporte", label: "Transporte", icon: Bus },
-  { value: "educacao", label: "Educação", icon: GraduationCap },
+  { value: "alimentacao", label: "Alimentação", icon: UtensilsCrossed },
+  { value: "saude", label: "Saúde", icon: HeartPulse },
+  { value: "lazer", label: "Lazer", icon: Gamepad2 },
+  { value: "streamings", label: "Streamings", icon: Tv },
   { value: "outros_despesa", label: "Outros", icon: CircleHelp },
 ];
 
+/** Retorna a lista de categorias adequada ao tipo da transação. */
 function categoryFor(type: TxType) {
   return type === "receita" ? RECEITA_CATEGORIES : DESPESA_CATEGORIES;
 }
 
+/** Categoria pré-selecionada ao abrir o dialog. */
 function defaultCategory(type: TxType): TxCategory {
   return type === "receita" ? "salario" : "contas";
 }
 
+/** Procura o rótulo legível para uma categoria. */
 function labelForCategory(category?: TxCategory) {
   if (!category) return "";
   const all = [...RECEITA_CATEGORIES, ...DESPESA_CATEGORIES];
   return all.find((c) => c.value === category)?.label ?? "";
 }
 
+/** Procura o ícone (componente Lucide) para uma categoria. */
 function iconForCategory(category?: TxCategory) {
   if (!category) return CircleHelp;
   const all = [...RECEITA_CATEGORIES, ...DESPESA_CATEGORIES];
@@ -100,15 +100,15 @@ function Index() {
   const [month, setMonth] = useState(now.getMonth());
   const { state, update } = useFinance();
 
-  const totals = useMemo(
-    () => computeMonthBalances(state, year, month),
-    [state, year, month],
-  );
-
+  // Lançamentos do mês selecionado (mais recentes primeiro).
   const currentKey = monthKey(year, month);
-  const monthTxs = state.transactions
-    .filter((t) => txMonthKey(t) === currentKey)
-    .sort((a, b) => b.date.localeCompare(a.date));
+  const monthTxs = useMemo(
+    () =>
+      state.transactions
+        .filter((t) => txMonthKey(t) === currentKey)
+        .sort((a, b) => b.date.localeCompare(a.date)),
+    [state.transactions, currentKey],
+  );
 
   return (
     <div className="space-y-5">
@@ -127,22 +127,6 @@ function Index() {
           update((s) => ({ ...s, initialBalance: v }))
         }
       />
-
-      <section
-        className="rounded-3xl p-5 shadow-[var(--shadow-soft)] border border-border/60"
-        style={{ background: "var(--gradient-card)" }}
-      >
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">
-          Saldo final do mês
-        </p>
-        <p className="mt-1 text-3xl font-semibold">{formatBRL(totals.saldoFinal)}</p>
-        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-          <MiniStat label="Sobra anterior" value={formatBRL(totals.carryOver)} color="pastel-blue" />
-          <MiniStat label="Rendimentos" value={formatBRL(totals.rendimentoEstimado)} color="pastel-purple" />
-          <MiniStat label="Receitas" value={formatBRL(totals.receitasMes)} color="pastel-green" />
-          <MiniStat label="Despesas" value={formatBRL(totals.despesasMes)} color="pastel-red" />
-        </div>
-      </section>
 
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold">Lançamentos</h2>
@@ -215,17 +199,7 @@ function Index() {
   );
 }
 
-function MiniStat({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <div className="rounded-2xl bg-card/60 border border-border/60 px-3 py-2">
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="text-sm font-semibold" style={{ color: `var(--${color})` }}>
-        {value}
-      </p>
-    </div>
-  );
-}
-
+/** Card editável que guarda o saldo inicial das operações do usuário. */
 function InitialBalanceCard({
   value,
   onChange,
@@ -239,7 +213,7 @@ function InitialBalanceCard({
     <div className="rounded-2xl bg-card/70 border border-border/60 px-4 py-3 flex items-center gap-3">
       <PiggyBank className="h-5 w-5" style={{ color: "var(--pastel-yellow)" }} />
       <div className="flex-1">
-        <p className="text-xs text-muted-foreground">Saldo inicial</p>
+        <p className="text-xs text-muted-foreground">Saldo inicial das operações</p>
         {editing ? (
           <Input
             autoFocus
@@ -271,11 +245,16 @@ function InitialBalanceCard({
           </button>
         )}
       </div>
-      <Sparkles className="h-4 w-4 text-muted-foreground" />
     </div>
   );
 }
 
+/**
+ * Dialog minimalista para inserir receita ou despesa.
+ * - Tipo (receita/despesa) escolhido por dois grandes botões coloridos.
+ * - Categoria por grid de chips com ícone e cor do tipo.
+ * - Descrição opcional; valor e data obrigatórios.
+ */
 function AddTxDialog({
   year,
   month,
@@ -306,12 +285,14 @@ function AddTxDialog({
     setCategory(defaultCategory("receita"));
   };
 
+  // Ao trocar o tipo, alinhamos a categoria padrão para evitar mismatch.
   const handleTypeChange = (next: TxType) => {
     setType(next);
     setCategory(defaultCategory(next));
   };
 
   const categories = categoryFor(type);
+  const accent = type === "receita" ? "pastel-green" : "pastel-red";
 
   return (
     <Dialog
@@ -331,73 +312,94 @@ function AddTxDialog({
           <Plus className="h-4 w-4" /> Novo
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Novo lançamento</DialogTitle>
         </DialogHeader>
-        <Tabs value={type} onValueChange={(v) => handleTypeChange(v as TxType)}>
-          <TabsList className="grid grid-cols-2 w-full">
-            <TabsTrigger
-              value="receita"
-              className="data-[state=active]:bg-pastel-green/20 data-[state=active]:text-pastel-green"
-            >
-              Receita
-            </TabsTrigger>
-            <TabsTrigger
-              value="despesa"
-              className="data-[state=active]:bg-pastel-red/20 data-[state=active]:text-pastel-red"
-            >
-              Despesa
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <div className="grid gap-3 pt-2">
-          <div className="grid gap-1.5">
-            <Label>Categoria</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {categories.map((c) => {
-                const Icon = c.icon;
-                const selected = category === c.value;
-                return (
-                  <button
-                    key={c.value}
-                    type="button"
-                    onClick={() => setCategory(c.value)}
-                    className="flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 px-2 py-2 text-xs font-medium transition-colors"
-                    style={{
-                      borderColor: selected ? `var(--${type === "receita" ? "pastel-green" : "pastel-red"})` : undefined,
-                      color: selected ? `var(--${type === "receita" ? "pastel-green" : "pastel-red"})` : undefined,
-                    }}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {c.label}
-                    {selected && <Check className="h-3 w-3 ml-auto" />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="grid gap-1.5">
-            <Label>Descrição</Label>
-            <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Ex.: Salário, Mercado" />
-          </div>
-          <div className="grid gap-1.5">
-            <Label>Valor (R$)</Label>
+        {/* Seletor de tipo: dois botões grandes lado a lado, com cor pastel correspondente. */}
+        <div className="grid grid-cols-2 gap-2">
+          <TypeButton
+            active={type === "receita"}
+            color="pastel-green"
+            icon={ArrowUpCircle}
+            label="Receita"
+            onClick={() => handleTypeChange("receita")}
+          />
+          <TypeButton
+            active={type === "despesa"}
+            color="pastel-red"
+            icon={ArrowDownCircle}
+            label="Despesa"
+            onClick={() => handleTypeChange("despesa")}
+          />
+        </div>
+
+        {/* Valor em destaque, tipografia grande e cor do tipo. */}
+        <div className="rounded-2xl bg-card/60 border border-border/60 px-4 py-3">
+          <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+            Valor
+          </Label>
+          <div className="flex items-baseline gap-1">
+            <span className="text-base font-medium" style={{ color: `var(--${accent})` }}>R$</span>
             <Input
               type="number"
               inputMode="decimal"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0,00"
+              className="h-10 border-0 bg-transparent px-0 text-2xl font-semibold shadow-none focus-visible:ring-0"
+              style={{ color: `var(--${accent})` }}
             />
           </div>
-          <div className="grid gap-1.5">
-            <Label>Data</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </div>
         </div>
+
+        {/* Grid de categorias com ícone — clean, sem rótulo redundante. */}
+        <div className="grid grid-cols-4 gap-2">
+          {categories.map((c) => {
+            const Icon = c.icon;
+            const selected = category === c.value;
+            return (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => setCategory(c.value)}
+                className="flex flex-col items-center gap-1 rounded-xl border bg-card/60 px-1 py-2 text-[10px] font-medium transition-all"
+                style={{
+                  borderColor: selected ? `var(--${accent})` : "var(--border)",
+                  background: selected ? `color-mix(in oklch, var(--${accent}) 18%, transparent)` : undefined,
+                  color: selected ? `var(--${accent})` : undefined,
+                }}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="leading-tight text-center">{c.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Descrição é opcional; data com padrão para o mês selecionado. */}
+        <div className="grid grid-cols-[1fr_auto] gap-2">
+          <Input
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            placeholder="Descrição (opcional)"
+            className="h-9"
+          />
+          <Input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="h-9 w-[9.5rem]"
+          />
+        </div>
+
         <DialogFooter>
           <Button
+            className="w-full"
+            style={{
+              background: `var(--${accent})`,
+              color: "var(--background)",
+            }}
             onClick={() => {
               const v = parseFloat(amount);
               if (!v || v <= 0) return;
@@ -406,17 +408,48 @@ function AddTxDialog({
                 type,
                 category,
                 amount: v,
-                description: desc,
+                description: desc.trim(),
                 date,
               });
               setOpen(false);
               reset();
             }}
           >
-            Adicionar
+            Adicionar {type === "receita" ? "receita" : "despesa"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Botão grande de seleção de tipo (receita / despesa). */
+function TypeButton({
+  active,
+  color,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  color: string;
+  icon: React.ElementType;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all"
+      style={{
+        borderColor: active ? `var(--${color})` : "var(--border)",
+        background: active ? `color-mix(in oklch, var(--${color}) 18%, transparent)` : "transparent",
+        color: active ? `var(--${color})` : "var(--muted-foreground)",
+      }}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </button>
   );
 }
