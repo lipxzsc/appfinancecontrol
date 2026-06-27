@@ -84,7 +84,7 @@ function iconForCategory(category?: TxCategory) {
   return all.find((c) => c.value === category)?.icon ?? CircleHelp;
 }
 
-export const Route = createFileRoute("/_authenticated/")({
+export const Route = createFileRoute("/_authenticated/transacoes")({
   head: () => ({
     meta: [
       { title: "Início — Bolso Leve" },
