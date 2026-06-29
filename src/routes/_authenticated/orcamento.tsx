@@ -13,6 +13,7 @@ import {
   CircleHelp,
   Pencil,
   Check,
+  Lock,
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { MonthCarousel } from "@/components/month-carousel";
@@ -25,6 +26,9 @@ import {
   txMonthKey,
   type TxCategory,
 } from "@/lib/finance-store";
+import { usePlan, FREE_LIMITS } from "@/lib/plan-store";
+import { ProLockOverlay } from "@/components/pro-lock";
+import { Link } from "@tanstack/react-router";
 
 /**
  * Página de Orçamento.
@@ -67,6 +71,7 @@ function OrcamentoPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const { state, update } = useFinance();
+  const plan = usePlan();
 
   const currentKey = monthKey(year, month);
 
@@ -113,7 +118,7 @@ function OrcamentoPage() {
 
       {/* Gráfico de distribuição das despesas (estilo doughnut) */}
       <section
-        className="rounded-3xl border border-border/60 p-5 shadow-[var(--shadow-soft)]"
+        className="relative rounded-3xl border border-border/60 p-5 shadow-[var(--shadow-soft)]"
         style={{ background: "var(--gradient-card)" }}
       >
         <h2 className="text-base font-semibold">Distribuição de Despesas</h2>
@@ -175,15 +180,27 @@ function OrcamentoPage() {
             </ul>
           </div>
         )}
+        {/* Para Free: cobre o gráfico com overlay de cadeado. */}
+        {!plan.isPro && pieData.length > 0 && (
+          <ProLockOverlay message="Gráfico completo no Pro" />
+        )}
       </section>
 
       {/* Lista de categorias com limite editável e barra de progresso */}
       <section className="space-y-2">
-        <h2 className="text-base font-semibold">Progresso dos Orçamentos</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold">Progresso dos Orçamentos</h2>
+          {!plan.isPro && (
+            <Link to="/planos" className="text-[10px] text-muted-foreground hover:text-foreground">
+              {FREE_LIMITS.budgets} editáveis no Free
+            </Link>
+          )}
+        </div>
         <ul className="space-y-2">
-          {EXPENSE_CATEGORIES.map((c) => {
+          {EXPENSE_CATEGORIES.map((c, idx) => {
             const spent = spentByCategory[c.value] ?? 0;
             const limit = state.budgets?.[c.value] ?? 0;
+            const locked = !plan.isPro && idx >= FREE_LIMITS.budgets;
             return (
               <BudgetRow
                 key={c.value}
@@ -192,6 +209,7 @@ function OrcamentoPage() {
                 color={c.color}
                 spent={spent}
                 limit={limit}
+                locked={locked}
                 onSave={(v) => setBudget(c.value, v)}
               />
             );
@@ -209,6 +227,7 @@ function BudgetRow({
   color,
   spent,
   limit,
+  locked,
   onSave,
 }: {
   label: string;
@@ -216,6 +235,7 @@ function BudgetRow({
   color: string;
   spent: number;
   limit: number;
+  locked?: boolean;
   onSave: (value: number) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -240,7 +260,15 @@ function BudgetRow({
             {formatBRL(spent)} {limit > 0 && <>/ {formatBRL(limit)}</>}
           </p>
         </div>
-        {editing ? (
+        {locked ? (
+          <Link
+            to="/planos"
+            aria-label="Desbloquear no Pro"
+            className="grid h-9 w-9 place-items-center rounded-md text-muted-foreground hover:text-foreground"
+          >
+            <Lock className="h-4 w-4" style={{ color: "var(--pastel-yellow)" }} />
+          </Link>
+        ) : editing ? (
           <div className="flex items-center gap-1">
             <Input
               autoFocus

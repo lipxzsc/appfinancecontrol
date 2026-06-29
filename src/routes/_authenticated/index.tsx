@@ -1,12 +1,30 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, Sparkles } from "lucide-react";
+import {
+  Wallet,
+  TrendingUp,
+  ArrowUpRight,
+  ArrowDownRight,
+  Sparkles,
+  FileText,
+  Lock,
+} from "lucide-react";
 import { MonthCarousel } from "@/components/month-carousel";
+import { Button } from "@/components/ui/button";
 import {
   useFinance,
   formatBRL,
   computeMonthBalances,
+  txMonthKey,
+  monthKey,
 } from "@/lib/finance-store";
+import {
+  AddTxDialog,
+  InitialBalanceCard,
+  TxListItem,
+} from "@/components/tx-helpers";
+import { usePlan, FREE_LIMITS } from "@/lib/plan-store";
+import { toast } from "sonner";
 
 /**
  * Página inicial (Visão Geral).
@@ -29,7 +47,9 @@ function Overview() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
-  const { state } = useFinance();
+  const { state, update } = useFinance();
+  const plan = usePlan();
+  const currentKey = monthKey(year, month);
 
   // Totais do mês (sobra do mês anterior, receitas, despesas, rendimento e saldo final).
   const totals = useMemo(
@@ -42,6 +62,19 @@ function Overview() {
     () => state.investments.reduce((s, i) => s + i.amount, 0),
     [state.investments],
   );
+
+  // Lançamentos do mês selecionado, mais recentes primeiro.
+  const monthTxs = useMemo(
+    () =>
+      state.transactions
+        .filter((t) => txMonthKey(t) === currentKey)
+        .sort((a, b) => b.date.localeCompare(a.date)),
+    [state.transactions, currentKey],
+  );
+
+  // Trava de transações para o plano Free (X por mês).
+  const txLocked =
+    !plan.isPro && monthTxs.length >= FREE_LIMITS.transactionsPerMonth;
 
   return (
     <div className="space-y-5">
@@ -102,9 +135,68 @@ function Overview() {
         />
       </div>
 
-      <p className="text-center text-xs text-muted-foreground">
-        Use as abas inferiores para registrar lançamentos, definir orçamentos, sonhos e investimentos.
-      </p>
+      {/* Saldo inicial editável */}
+      <InitialBalanceCard
+        value={state.initialBalance}
+        onChange={(v) => update((s) => ({ ...s, initialBalance: v }))}
+      />
+
+      {/* Lançamentos do mês: header + add + lista */}
+      <section className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold">Lançamentos</h2>
+            {!plan.isPro && (
+              <p className="text-[10px] text-muted-foreground">
+                {monthTxs.length}/{FREE_LIMITS.transactionsPerMonth} usados no Free
+              </p>
+            )}
+          </div>
+          <AddTxDialog
+            year={year}
+            month={month}
+            onAdd={(t) =>
+              update((s) => ({ ...s, transactions: [...s.transactions, t] }))
+            }
+            lockedReason={txLocked ? `Limite ${FREE_LIMITS.transactionsPerMonth}/mês` : undefined}
+          />
+        </div>
+        <ul className="space-y-2">
+          {monthTxs.length === 0 && (
+            <li className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              Nenhum lançamento neste mês ainda.
+            </li>
+          )}
+          {monthTxs.slice(0, 6).map((t) => (
+            <TxListItem
+              key={t.id}
+              tx={t}
+              onDelete={() =>
+                update((s) => ({
+                  ...s,
+                  transactions: s.transactions.filter((x) => x.id !== t.id),
+                }))
+              }
+            />
+          ))}
+          {monthTxs.length > 6 && (
+            <li className="text-center">
+              <Link to="/transacoes" className="text-xs text-primary">
+                Ver todas ({monthTxs.length}) →
+              </Link>
+            </li>
+          )}
+        </ul>
+      </section>
+
+      {/* Relatório mensal (Pro) */}
+      <MonthReportButton
+        canUse={plan.isPro}
+        year={year}
+        month={month}
+        totals={totals}
+        txs={monthTxs}
+      />
     </div>
   );
 }
@@ -144,5 +236,82 @@ function SummaryCard({
       </p>
       {hint && <p className="text-[10px] text-muted-foreground">{hint}</p>}
     </Link>
+  );
+}
+
+/**
+ * Botão de relatório mensal — gera um TXT resumido.
+ * Para Free: vira CTA de upgrade.
+ */
+function MonthReportButton({
+  canUse,
+  year,
+  month,
+  totals,
+  txs,
+}: {
+  canUse: boolean;
+  year: number;
+  month: number;
+  totals: ReturnType<typeof computeMonthBalances>;
+  txs: ReturnType<typeof useFinance>["state"]["transactions"];
+}) {
+  if (!canUse) {
+    return (
+      <Button
+        asChild
+        variant="outline"
+        className="w-full justify-center gap-2 border-dashed"
+      >
+        <Link to="/planos">
+          <Lock className="h-4 w-4" style={{ color: "var(--pastel-yellow)" }} />
+          Relatório mensal (Pro)
+        </Link>
+      </Button>
+    );
+  }
+
+  const handleDownload = () => {
+    const monthName = new Date(year, month, 1).toLocaleDateString("pt-BR", {
+      month: "long",
+      year: "numeric",
+    });
+    const lines: string[] = [];
+    lines.push(`FinControl — Relatório de ${monthName}`);
+    lines.push("=".repeat(40));
+    lines.push("");
+    lines.push(`Sobra anterior:      ${formatBRL(totals.carryOver)}`);
+    lines.push(`Receitas do mês:     ${formatBRL(totals.receitasMes)}`);
+    lines.push(`Despesas do mês:     ${formatBRL(totals.despesasMes)}`);
+    lines.push(`Rendimento estimado: ${formatBRL(totals.rendimentoEstimado)}`);
+    lines.push(`SALDO FINAL:         ${formatBRL(totals.saldoFinal)}`);
+    lines.push("");
+    lines.push(`Lançamentos (${txs.length}):`);
+    lines.push("-".repeat(40));
+    for (const t of txs) {
+      const sign = t.type === "receita" ? "+" : "-";
+      lines.push(
+        `${t.date}  ${sign}${formatBRL(t.amount).padStart(12)}  ${t.description || t.category || ""}`,
+      );
+    }
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `fincontrol-${year}-${String(month + 1).padStart(2, "0")}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Relatório baixado!");
+  };
+
+  return (
+    <Button
+      onClick={handleDownload}
+      className="w-full justify-center gap-2"
+      style={{ background: "var(--gradient-primary)", color: "var(--background)" }}
+    >
+      <FileText className="h-4 w-4" />
+      Gerar relatório mensal
+    </Button>
   );
 }

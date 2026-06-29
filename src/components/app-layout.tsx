@@ -3,6 +3,8 @@ import { Home, ArrowLeftRight, PieChart, Target, TrendingUp, LogOut, User as Use
 import { useEffect, useState, type ComponentType } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { usePlan } from "@/lib/plan-store";
+import { ProBadge, ProUpsellChip } from "@/components/pro-lock";
 
 interface NavItem {
   to: string;
@@ -22,6 +24,7 @@ export function AppLayout() {
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [signedIn, setSignedIn] = useState(false);
+  const plan = usePlan();
 
   useEffect(() => {
     let active = true;
@@ -75,6 +78,9 @@ export function AppLayout() {
               {displayName ? `Olá, ${displayName}` : "Receitas, sonhos e investimentos"}
             </p>
           </div>
+          {signedIn && (
+            plan.isPro ? <ProBadge daysLeft={plan.daysLeft} /> : <ProUpsellChip />
+          )}
           {signedIn ? (
             <Button variant="ghost" size="icon" aria-label="Sair" onClick={signOut}>
               <LogOut className="h-4 w-4" />

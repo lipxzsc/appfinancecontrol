@@ -16,6 +16,8 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { useFinance, formatBRL, uid, type Investment } from "@/lib/finance-store";
+import { usePlan, FREE_LIMITS } from "@/lib/plan-store";
+import { ProLockButton } from "@/components/pro-lock";
 
 export const Route = createFileRoute("/_authenticated/investimentos")({
   head: () => ({
@@ -31,6 +33,9 @@ const TIPOS: Investment["type"][] = ["CDB", "FII", "Ações", "Tesouro Direto", 
 
 function InvestPage() {
   const { state, update } = useFinance();
+  const plan = usePlan();
+  const invLocked =
+    !plan.isPro && state.investments.length >= FREE_LIMITS.investments;
 
   const totalInvest = state.investments.reduce((s, i) => s + i.amount, 0);
   const rendimentoMes = state.investments.reduce(
@@ -65,10 +70,14 @@ function InvestPage() {
 
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold">Carteira</h3>
-        <AddInvestmentDialog
-          cdi={state.cdiMonthlyPct}
-          onAdd={(i) => update((s) => ({ ...s, investments: [...s.investments, i] }))}
-        />
+        {invLocked ? (
+          <ProLockButton label={`Limite ${FREE_LIMITS.investments}`} />
+        ) : (
+          <AddInvestmentDialog
+            cdi={state.cdiMonthlyPct}
+            onAdd={(i) => update((s) => ({ ...s, investments: [...s.investments, i] }))}
+          />
+        )}
       </div>
 
       <ul className="space-y-2">
