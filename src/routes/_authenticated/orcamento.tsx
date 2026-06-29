@@ -227,6 +227,7 @@ function BudgetRow({
   color,
   spent,
   limit,
+  locked,
   onSave,
 }: {
   label: string;
@@ -234,6 +235,7 @@ function BudgetRow({
   color: string;
   spent: number;
   limit: number;
+  locked?: boolean;
   onSave: (value: number) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -258,7 +260,15 @@ function BudgetRow({
             {formatBRL(spent)} {limit > 0 && <>/ {formatBRL(limit)}</>}
           </p>
         </div>
-        {editing ? (
+        {locked ? (
+          <Link
+            to="/planos"
+            aria-label="Desbloquear no Pro"
+            className="grid h-9 w-9 place-items-center rounded-md text-muted-foreground hover:text-foreground"
+          >
+            <Lock className="h-4 w-4" style={{ color: "var(--pastel-yellow)" }} />
+          </Link>
+        ) : editing ? (
           <div className="flex items-center gap-1">
             <Input
               autoFocus
