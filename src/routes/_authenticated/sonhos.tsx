@@ -12,6 +12,8 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine,
 } from "recharts";
 import { useFinance, formatBRL, uid, type Goal } from "@/lib/finance-store";
+import { usePlan, FREE_LIMITS } from "@/lib/plan-store";
+import { ProLockButton } from "@/components/pro-lock";
 
 export const Route = createFileRoute("/_authenticated/sonhos")({
   head: () => ({
@@ -34,6 +36,8 @@ const PRESETS = [
 
 function SonhosPage() {
   const { state, update } = useFinance();
+  const plan = usePlan();
+  const goalLocked = !plan.isPro && state.goals.length >= FREE_LIMITS.goals;
 
   return (
     <div className="space-y-5">
@@ -44,7 +48,11 @@ function SonhosPage() {
             Separe um valor por mês e veja quando alcançará cada objetivo.
           </p>
         </div>
-        <AddGoalDialog onAdd={(g) => update((s) => ({ ...s, goals: [...s.goals, g] }))} />
+        {goalLocked ? (
+          <ProLockButton label={`Limite ${FREE_LIMITS.goals} meta`} />
+        ) : (
+          <AddGoalDialog onAdd={(g) => update((s) => ({ ...s, goals: [...s.goals, g] }))} />
+        )}
       </div>
 
       {state.goals.length === 0 && (
