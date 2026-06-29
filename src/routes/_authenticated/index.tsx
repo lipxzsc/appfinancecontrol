@@ -238,3 +238,80 @@ function SummaryCard({
     </Link>
   );
 }
+
+/**
+ * Botão de relatório mensal — gera um TXT resumido.
+ * Para Free: vira CTA de upgrade.
+ */
+function MonthReportButton({
+  canUse,
+  year,
+  month,
+  totals,
+  txs,
+}: {
+  canUse: boolean;
+  year: number;
+  month: number;
+  totals: ReturnType<typeof computeMonthBalances>;
+  txs: ReturnType<typeof useFinance>["state"]["transactions"];
+}) {
+  if (!canUse) {
+    return (
+      <Button
+        asChild
+        variant="outline"
+        className="w-full justify-center gap-2 border-dashed"
+      >
+        <Link to="/planos">
+          <Lock className="h-4 w-4" style={{ color: "var(--pastel-yellow)" }} />
+          Relatório mensal (Pro)
+        </Link>
+      </Button>
+    );
+  }
+
+  const handleDownload = () => {
+    const monthName = new Date(year, month, 1).toLocaleDateString("pt-BR", {
+      month: "long",
+      year: "numeric",
+    });
+    const lines: string[] = [];
+    lines.push(`FinControl — Relatório de ${monthName}`);
+    lines.push("=".repeat(40));
+    lines.push("");
+    lines.push(`Sobra anterior:      ${formatBRL(totals.carryOver)}`);
+    lines.push(`Receitas do mês:     ${formatBRL(totals.receitasMes)}`);
+    lines.push(`Despesas do mês:     ${formatBRL(totals.despesasMes)}`);
+    lines.push(`Rendimento estimado: ${formatBRL(totals.rendimentoEstimado)}`);
+    lines.push(`SALDO FINAL:         ${formatBRL(totals.saldoFinal)}`);
+    lines.push("");
+    lines.push(`Lançamentos (${txs.length}):`);
+    lines.push("-".repeat(40));
+    for (const t of txs) {
+      const sign = t.type === "receita" ? "+" : "-";
+      lines.push(
+        `${t.date}  ${sign}${formatBRL(t.amount).padStart(12)}  ${t.description || t.category || ""}`,
+      );
+    }
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `fincontrol-${year}-${String(month + 1).padStart(2, "0")}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Relatório baixado!");
+  };
+
+  return (
+    <Button
+      onClick={handleDownload}
+      className="w-full justify-center gap-2"
+      style={{ background: "var(--gradient-primary)", color: "var(--background)" }}
+    >
+      <FileText className="h-4 w-4" />
+      Gerar relatório mensal
+    </Button>
+  );
+}
