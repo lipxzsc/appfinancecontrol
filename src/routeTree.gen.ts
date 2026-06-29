@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedTransacoesRouteImport } from './routes/_authenticated/transacoes'
 import { Route as AuthenticatedSonhosRouteImport } from './routes/_authenticated/sonhos'
 import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated/planos'
 import { Route as AuthenticatedOrcamentoRouteImport } from './routes/_authenticated/orcamento'
@@ -30,11 +29,6 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedTransacoesRoute = AuthenticatedTransacoesRouteImport.update({
-  id: '/transacoes',
-  path: '/transacoes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSonhosRoute = AuthenticatedSonhosRouteImport.update({
@@ -66,7 +60,6 @@ export interface FileRoutesByFullPath {
   '/orcamento': typeof AuthenticatedOrcamentoRoute
   '/planos': typeof AuthenticatedPlanosRoute
   '/sonhos': typeof AuthenticatedSonhosRoute
-  '/transacoes': typeof AuthenticatedTransacoesRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -74,7 +67,6 @@ export interface FileRoutesByTo {
   '/orcamento': typeof AuthenticatedOrcamentoRoute
   '/planos': typeof AuthenticatedPlanosRoute
   '/sonhos': typeof AuthenticatedSonhosRoute
-  '/transacoes': typeof AuthenticatedTransacoesRoute
   '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
@@ -85,7 +77,6 @@ export interface FileRoutesById {
   '/_authenticated/orcamento': typeof AuthenticatedOrcamentoRoute
   '/_authenticated/planos': typeof AuthenticatedPlanosRoute
   '/_authenticated/sonhos': typeof AuthenticatedSonhosRoute
-  '/_authenticated/transacoes': typeof AuthenticatedTransacoesRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
@@ -97,16 +88,8 @@ export interface FileRouteTypes {
     | '/orcamento'
     | '/planos'
     | '/sonhos'
-    | '/transacoes'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/auth'
-    | '/investimentos'
-    | '/orcamento'
-    | '/planos'
-    | '/sonhos'
-    | '/transacoes'
-    | '/'
+  to: '/auth' | '/investimentos' | '/orcamento' | '/planos' | '/sonhos' | '/'
   id:
     | '__root__'
     | '/_authenticated'
@@ -115,7 +98,6 @@ export interface FileRouteTypes {
     | '/_authenticated/orcamento'
     | '/_authenticated/planos'
     | '/_authenticated/sonhos'
-    | '/_authenticated/transacoes'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
@@ -145,13 +127,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/transacoes': {
-      id: '/_authenticated/transacoes'
-      path: '/transacoes'
-      fullPath: '/transacoes'
-      preLoaderRoute: typeof AuthenticatedTransacoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/sonhos': {
@@ -190,7 +165,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOrcamentoRoute: typeof AuthenticatedOrcamentoRoute
   AuthenticatedPlanosRoute: typeof AuthenticatedPlanosRoute
   AuthenticatedSonhosRoute: typeof AuthenticatedSonhosRoute
-  AuthenticatedTransacoesRoute: typeof AuthenticatedTransacoesRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
@@ -199,7 +173,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOrcamentoRoute: AuthenticatedOrcamentoRoute,
   AuthenticatedPlanosRoute: AuthenticatedPlanosRoute,
   AuthenticatedSonhosRoute: AuthenticatedSonhosRoute,
-  AuthenticatedTransacoesRoute: AuthenticatedTransacoesRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
