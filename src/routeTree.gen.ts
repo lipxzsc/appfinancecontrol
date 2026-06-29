@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedTransacoesRouteImport } from './routes/_authenticated/transacoes'
 import { Route as AuthenticatedSonhosRouteImport } from './routes/_authenticated/sonhos'
+import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated/planos'
 import { Route as AuthenticatedOrcamentoRouteImport } from './routes/_authenticated/orcamento'
 import { Route as AuthenticatedInvestimentosRouteImport } from './routes/_authenticated/investimentos'
 
@@ -41,6 +42,11 @@ const AuthenticatedSonhosRoute = AuthenticatedSonhosRouteImport.update({
   path: '/sonhos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPlanosRoute = AuthenticatedPlanosRouteImport.update({
+  id: '/planos',
+  path: '/planos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedOrcamentoRoute = AuthenticatedOrcamentoRouteImport.update({
   id: '/orcamento',
   path: '/orcamento',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/investimentos': typeof AuthenticatedInvestimentosRoute
   '/orcamento': typeof AuthenticatedOrcamentoRoute
+  '/planos': typeof AuthenticatedPlanosRoute
   '/sonhos': typeof AuthenticatedSonhosRoute
   '/transacoes': typeof AuthenticatedTransacoesRoute
 }
@@ -65,6 +72,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/investimentos': typeof AuthenticatedInvestimentosRoute
   '/orcamento': typeof AuthenticatedOrcamentoRoute
+  '/planos': typeof AuthenticatedPlanosRoute
   '/sonhos': typeof AuthenticatedSonhosRoute
   '/transacoes': typeof AuthenticatedTransacoesRoute
   '/': typeof AuthenticatedIndexRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/investimentos': typeof AuthenticatedInvestimentosRoute
   '/_authenticated/orcamento': typeof AuthenticatedOrcamentoRoute
+  '/_authenticated/planos': typeof AuthenticatedPlanosRoute
   '/_authenticated/sonhos': typeof AuthenticatedSonhosRoute
   '/_authenticated/transacoes': typeof AuthenticatedTransacoesRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/investimentos'
     | '/orcamento'
+    | '/planos'
     | '/sonhos'
     | '/transacoes'
   fileRoutesByTo: FileRoutesByTo
@@ -93,6 +103,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/investimentos'
     | '/orcamento'
+    | '/planos'
     | '/sonhos'
     | '/transacoes'
     | '/'
@@ -102,6 +113,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/investimentos'
     | '/_authenticated/orcamento'
+    | '/_authenticated/planos'
     | '/_authenticated/sonhos'
     | '/_authenticated/transacoes'
     | '/_authenticated/'
@@ -149,6 +161,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSonhosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/planos': {
+      id: '/_authenticated/planos'
+      path: '/planos'
+      fullPath: '/planos'
+      preLoaderRoute: typeof AuthenticatedPlanosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/orcamento': {
       id: '/_authenticated/orcamento'
       path: '/orcamento'
@@ -169,6 +188,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedInvestimentosRoute: typeof AuthenticatedInvestimentosRoute
   AuthenticatedOrcamentoRoute: typeof AuthenticatedOrcamentoRoute
+  AuthenticatedPlanosRoute: typeof AuthenticatedPlanosRoute
   AuthenticatedSonhosRoute: typeof AuthenticatedSonhosRoute
   AuthenticatedTransacoesRoute: typeof AuthenticatedTransacoesRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -177,6 +197,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInvestimentosRoute: AuthenticatedInvestimentosRoute,
   AuthenticatedOrcamentoRoute: AuthenticatedOrcamentoRoute,
+  AuthenticatedPlanosRoute: AuthenticatedPlanosRoute,
   AuthenticatedSonhosRoute: AuthenticatedSonhosRoute,
   AuthenticatedTransacoesRoute: AuthenticatedTransacoesRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
