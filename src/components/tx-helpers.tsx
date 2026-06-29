@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import {
   Plus,
   PiggyBank,
+  Trash2,
   Briefcase,
   Wallet,
   HandCoins,
@@ -383,7 +384,7 @@ export function TxListItem({
         {formatBRL(tx.amount)}
       </span>
       <Button variant="ghost" size="icon" aria-label="Excluir" onClick={onDelete}>
-        <Plus className="h-4 w-4 rotate-45" />
+        <Trash2 className="h-4 w-4" />
       </Button>
     </li>
   );
