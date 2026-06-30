@@ -7,6 +7,7 @@ import {
   ArrowDownRight,
   Sparkles,
   FileText,
+  FileSpreadsheet,
   Lock,
 } from "lucide-react";
 import { MonthCarousel } from "@/components/month-carousel";
@@ -21,10 +22,10 @@ import {
 import {
   AddTxDialog,
   InitialBalanceCard,
-  TxListItem,
 } from "@/components/tx-helpers";
 import { usePlan, FREE_LIMITS } from "@/lib/plan-store";
 import { toast } from "sonner";
+import { downloadMonthReportCSV, downloadMonthReportPDF } from "@/lib/month-report";
 
 /**
  * Página inicial (Visão Geral).
@@ -63,7 +64,7 @@ function Overview() {
     [state.investments],
   );
 
-  // Lançamentos do mês selecionado, mais recentes primeiro.
+  // Lançamentos do mês — usados aqui só pra contar a cota Free e gerar o relatório.
   const monthTxs = useMemo(
     () =>
       state.transactions
@@ -141,53 +142,33 @@ function Overview() {
         onChange={(v) => update((s) => ({ ...s, initialBalance: v }))}
       />
 
-      {/* Lançamentos do mês: header + add + lista */}
-      <section className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-semibold">Lançamentos</h2>
-            {!plan.isPro && (
-              <p className="text-[10px] text-muted-foreground">
-                {monthTxs.length}/{FREE_LIMITS.transactionsPerMonth} usados no Free
-              </p>
-            )}
-          </div>
-          <AddTxDialog
-            year={year}
-            month={month}
-            onAdd={(t) =>
-              update((s) => ({ ...s, transactions: [...s.transactions, t] }))
-            }
-            lockedReason={txLocked ? `Limite ${FREE_LIMITS.transactionsPerMonth}/mês` : undefined}
-          />
+      {/* Novo lançamento — a lista detalhada vive na página Transações. */}
+      <section className="flex items-center justify-between rounded-2xl border border-border/60 bg-card/70 px-4 py-3">
+        <div>
+          <h2 className="text-sm font-semibold">Adicionar lançamento</h2>
+          <p className="text-[11px] text-muted-foreground">
+            {!plan.isPro
+              ? `${monthTxs.length}/${FREE_LIMITS.transactionsPerMonth} usados no Free`
+              : "Receita ou despesa do mês"}
+          </p>
         </div>
-        <ul className="space-y-2">
-          {monthTxs.length === 0 && (
-            <li className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-              Nenhum lançamento neste mês ainda.
-            </li>
-          )}
-          {monthTxs.slice(0, 6).map((t) => (
-            <TxListItem
-              key={t.id}
-              tx={t}
-              onDelete={() =>
-                update((s) => ({
-                  ...s,
-                  transactions: s.transactions.filter((x) => x.id !== t.id),
-                }))
-              }
-            />
-          ))}
-          {monthTxs.length > 6 && (
-            <li className="text-center">
-              <Link to="/transacoes" className="text-xs text-primary">
-                Ver todas ({monthTxs.length}) →
-              </Link>
-            </li>
-          )}
-        </ul>
+        <AddTxDialog
+          year={year}
+          month={month}
+          onAdd={(t) =>
+            update((s) => ({ ...s, transactions: [...s.transactions, t] }))
+          }
+          lockedReason={txLocked ? `Limite ${FREE_LIMITS.transactionsPerMonth}/mês` : undefined}
+        />
       </section>
+      {monthTxs.length > 0 && (
+        <Link
+          to="/transacoes"
+          className="block rounded-2xl border border-dashed border-border/60 px-4 py-2 text-center text-xs text-muted-foreground hover:text-foreground"
+        >
+          Ver {monthTxs.length} {monthTxs.length === 1 ? "lançamento" : "lançamentos"} em Transações →
+        </Link>
+      )}
 
       {/* Relatório mensal (Pro) */}
       <MonthReportButton
@@ -196,6 +177,7 @@ function Overview() {
         month={month}
         totals={totals}
         txs={monthTxs}
+        state={state}
       />
     </div>
   );
@@ -249,12 +231,14 @@ function MonthReportButton({
   month,
   totals,
   txs,
+  state,
 }: {
   canUse: boolean;
   year: number;
   month: number;
   totals: ReturnType<typeof computeMonthBalances>;
   txs: ReturnType<typeof useFinance>["state"]["transactions"];
+  state: ReturnType<typeof useFinance>["state"];
 }) {
   if (!canUse) {
     return (
@@ -271,47 +255,40 @@ function MonthReportButton({
     );
   }
 
-  const handleDownload = () => {
-    const monthName = new Date(year, month, 1).toLocaleDateString("pt-BR", {
-      month: "long",
-      year: "numeric",
-    });
-    const lines: string[] = [];
-    lines.push(`FinControl — Relatório de ${monthName}`);
-    lines.push("=".repeat(40));
-    lines.push("");
-    lines.push(`Sobra anterior:      ${formatBRL(totals.carryOver)}`);
-    lines.push(`Receitas do mês:     ${formatBRL(totals.receitasMes)}`);
-    lines.push(`Despesas do mês:     ${formatBRL(totals.despesasMes)}`);
-    lines.push(`Rendimento estimado: ${formatBRL(totals.rendimentoEstimado)}`);
-    lines.push(`SALDO FINAL:         ${formatBRL(totals.saldoFinal)}`);
-    lines.push("");
-    lines.push(`Lançamentos (${txs.length}):`);
-    lines.push("-".repeat(40));
-    for (const t of txs) {
-      const sign = t.type === "receita" ? "+" : "-";
-      lines.push(
-        `${t.date}  ${sign}${formatBRL(t.amount).padStart(12)}  ${t.description || t.category || ""}`,
-      );
-    }
-    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `fincontrol-${year}-${String(month + 1).padStart(2, "0")}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Relatório baixado!");
-  };
-
   return (
-    <Button
-      onClick={handleDownload}
-      className="w-full justify-center gap-2"
-      style={{ background: "var(--gradient-primary)", color: "var(--background)" }}
+    <section
+      className="rounded-2xl border border-border/60 p-4 shadow-[var(--shadow-soft)]"
+      style={{ background: "var(--gradient-card)" }}
     >
-      <FileText className="h-4 w-4" />
-      Gerar relatório mensal
-    </Button>
+      <div className="flex items-center gap-2">
+        <FileText className="h-4 w-4" style={{ color: "var(--pastel-yellow)" }} />
+        <h2 className="text-sm font-semibold">Relatório mensal</h2>
+      </div>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        Resumo do mês com receitas e despesas por categoria, total investido e lista de lançamentos.
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Button
+          onClick={() => {
+            downloadMonthReportPDF({ year, month, totals, txs, state });
+            toast.success("PDF baixado!");
+          }}
+          className="justify-center gap-2"
+          style={{ background: "var(--gradient-primary)", color: "var(--background)" }}
+        >
+          <FileText className="h-4 w-4" /> PDF
+        </Button>
+        <Button
+          onClick={() => {
+            downloadMonthReportCSV({ year, month, totals, txs, state });
+            toast.success("CSV baixado! Abra no Excel ou Planilhas.");
+          }}
+          variant="outline"
+          className="justify-center gap-2"
+        >
+          <FileSpreadsheet className="h-4 w-4" /> CSV / Excel
+        </Button>
+      </div>
+    </section>
   );
 }

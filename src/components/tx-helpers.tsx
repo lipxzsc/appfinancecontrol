@@ -14,7 +14,9 @@ import {
   Gamepad2,
   HeartPulse,
   Bus,
-  Tv,
+  Home as HomeIcon,
+  Fuel,
+  GraduationCap,
   ArrowDownCircle,
   ArrowUpCircle,
   Lock,
@@ -46,15 +48,20 @@ export const RECEITA_CATEGORIES: { value: TxCategory; label: string; icon: React
   { value: "outros_receita", label: "Outros", icon: CircleHelp },
 ];
 
-/** Categorias de despesa exibidas como chips com ícone. */
+/**
+ * Categorias de despesa — mesmas usadas na página de Orçamento,
+ * para manter o vínculo entre lançamentos e limites mensais.
+ */
 export const DESPESA_CATEGORIES: { value: TxCategory; label: string; icon: React.ElementType }[] = [
+  { value: "moradia", label: "Moradia", icon: HomeIcon },
+  { value: "alimentacao", label: "Alimentação", icon: UtensilsCrossed },
+  { value: "transporte", label: "Transporte", icon: Bus },
+  { value: "combustivel", label: "Combustível", icon: Fuel },
   { value: "contas", label: "Contas", icon: Receipt },
   { value: "taxas", label: "Taxas", icon: Landmark },
-  { value: "transporte", label: "Transporte", icon: Bus },
-  { value: "alimentacao", label: "Alimentação", icon: UtensilsCrossed },
-  { value: "saude", label: "Saúde", icon: HeartPulse },
   { value: "lazer", label: "Lazer", icon: Gamepad2 },
-  { value: "streamings", label: "Streamings", icon: Tv },
+  { value: "saude", label: "Saúde", icon: HeartPulse },
+  { value: "educacao", label: "Educação", icon: GraduationCap },
   { value: "outros_despesa", label: "Outros", icon: CircleHelp },
 ];
 
