@@ -5,6 +5,20 @@ Um aplicativo responsivo, didático e intuitivo, desenvolvido com foco na soluç
 ## 🚀 Sobre o Projeto
 Este aplicativo foi projetado para simplificar a gestão financeira pessoal, oferecendo uma experiência "humanizada" desde o login até a análise avançada de gastos. Com uma arquitetura limpa (Clean Code), o sistema combina facilidade de uso com alta capacidade analítica.
 
+---
+
+## 🖼️ Interface do Usuário
+
+| Dashboard | Transações | Orçamento |
+| :---: | :---: | :---: |
+| <img src="https://github.com/user-attachments/assets/1537fba1-71b8-471e-a97b-88bef0f8504d" width="200"> | <img src="https://github.com/user-attachments/assets/67a2e51b-1078-4661-b0aa-5d0d813366a0" width="200"> | <img src="https://github.com/user-attachments/assets/78fc92f4-9694-4523-be91-096b60f90109" width="200"> |
+
+| Sonhos e Metas | Investimentos |
+| :---: | :---: |
+| <img src="https://github.com/user-attachments/assets/c6dae191-62bc-46c0-a573-b94e42d6f156" width="200"> | <img src="https://github.com/user-attachments/assets/8cee3170-95f5-4555-844a-d083db511f9d" width="200"> |
+
+---
+
 ## ✨ Funcionalidades Principais
 
 ### Experiência do Usuário (UX)
