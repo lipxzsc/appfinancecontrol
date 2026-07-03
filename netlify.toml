@@ -1,0 +1,9 @@
+# Netlify config for TanStack Start + Nitro (netlify preset)
+# Nitro's netlify preset outputs static assets to `dist/` and the
+# serverless function to `.netlify/functions-internal/server`.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
