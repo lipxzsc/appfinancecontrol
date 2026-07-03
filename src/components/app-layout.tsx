@@ -1,10 +1,11 @@
 import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, ArrowLeftRight, PieChart, Target, TrendingUp, LogOut, User as UserIcon } from "lucide-react";
+import { Home, ArrowLeftRight, PieChart, Target, TrendingUp, LogOut, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
 import { useEffect, useState, type ComponentType } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { usePlan } from "@/lib/plan-store";
 import { ProBadge, ProUpsellChip } from "@/components/pro-lock";
+import { parseAvatar } from "@/lib/avatars";
 
 interface NavItem {
   to: string;
@@ -23,6 +24,7 @@ export function AppLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [avatar, setAvatar] = useState<string | null>(null);
   const [signedIn, setSignedIn] = useState(false);
   const plan = usePlan();
 
@@ -39,11 +41,12 @@ export function AppLayout() {
       setSignedIn(true);
       const { data: prof } = await supabase
         .from("profiles")
-        .select("display_name")
+        .select("display_name, avatar_url")
         .eq("id", data.user.id)
         .maybeSingle();
       if (!active) return;
       setDisplayName(prof?.display_name ?? data.user.email?.split("@")[0] ?? null);
+      setAvatar(parseAvatar(prof?.avatar_url));
     }
     loadProfile();
     const { data: sub } = supabase.auth.onAuthStateChange(() => loadProfile());
@@ -68,10 +71,22 @@ export function AppLayout() {
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-3xl px-4 pt-6 pb-28">
         <header className="mb-6 flex items-center gap-3">
-          <div
-            className="h-10 w-10 rounded-2xl"
-            style={{ background: "var(--gradient-primary)" }}
-          />
+          {signedIn ? (
+            <Link
+              to="/configuracoes"
+              aria-label="Configurações"
+              className="h-10 w-10 rounded-2xl grid place-items-center text-xl overflow-hidden shrink-0 transition-transform hover:scale-105"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              {avatar && avatar.startsWith("http") ? (
+                <img src={avatar} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span>{avatar ?? "✨"}</span>
+              )}
+            </Link>
+          ) : (
+            <div className="h-10 w-10 rounded-2xl" style={{ background: "var(--gradient-primary)" }} />
+          )}
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-semibold leading-tight">FinControl</h1>
             <p className="text-xs text-muted-foreground truncate">
@@ -82,9 +97,14 @@ export function AppLayout() {
             plan.isPro ? <ProBadge daysLeft={plan.daysLeft} /> : <ProUpsellChip />
           )}
           {signedIn ? (
-            <Button variant="ghost" size="icon" aria-label="Sair" onClick={signOut}>
-              <LogOut className="h-4 w-4" />
-            </Button>
+            <>
+              <Button asChild variant="ghost" size="icon" aria-label="Configurações">
+                <Link to="/configuracoes"><SettingsIcon className="h-4 w-4" /></Link>
+              </Button>
+              <Button variant="ghost" size="icon" aria-label="Sair" onClick={signOut}>
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </>
           ) : (
             <Button asChild size="sm" variant="outline" className="gap-1 rounded-full">
               <Link to="/auth"><UserIcon className="h-4 w-4" /> Entrar</Link>
