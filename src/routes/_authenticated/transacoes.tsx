@@ -10,7 +10,6 @@ import {
   type TxCategory,
 } from "@/lib/finance-store";
 import {
-  AddTxDialog,
   TxListItem,
   iconForCategory,
   labelForCategory,
@@ -53,9 +52,6 @@ function TransacoesPage() {
         .sort((a, b) => b.date.localeCompare(a.date)),
     [state.transactions, currentKey],
   );
-
-  const txLocked =
-    !plan.isPro && monthTxs.length >= FREE_LIMITS.transactionsPerMonth;
 
   /**
    * Agrupa as transações do mês por categoria, preservando a ordem
@@ -102,14 +98,6 @@ function TransacoesPage() {
             </p>
           )}
         </div>
-        <AddTxDialog
-          year={year}
-          month={month}
-          onAdd={(t) =>
-            update((s) => ({ ...s, transactions: [...s.transactions, t] }))
-          }
-          lockedReason={txLocked ? `Limite ${FREE_LIMITS.transactionsPerMonth}/mês` : undefined}
-        />
       </div>
 
       {monthTxs.length === 0 ? (
@@ -153,7 +141,7 @@ function CategoryGroup({
   isReceita: boolean;
   onDelete: (id: string) => void;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const Icon = iconForCategory(category);
   const color = isReceita ? "var(--pastel-green)" : "var(--pastel-red)";
   return (
