@@ -141,7 +141,7 @@ function CategoryGroup({
   isReceita: boolean;
   onDelete: (id: string) => void;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const Icon = iconForCategory(category);
   const color = isReceita ? "var(--pastel-green)" : "var(--pastel-red)";
   return (
