@@ -161,6 +161,7 @@ export function AddTxDialog({
   const [date, setDate] = useState(
     `${year}-${String(month + 1).padStart(2, "0")}-${String(defaultDay).padStart(2, "0")}`,
   );
+  const [settled, setSettled] = useState(true);
 
   // Modo bloqueado (limite Free atingido): vira CTA para /planos.
   if (lockedReason) {
@@ -184,6 +185,7 @@ export function AddTxDialog({
     setAmount("");
     setType("receita");
     setCategory(defaultCategory("receita"));
+    setSettled(true);
   };
 
   const handleTypeChange = (next: TxType) => {
@@ -293,6 +295,26 @@ export function AddTxDialog({
           />
         </div>
 
+        <div className="grid grid-cols-2 gap-2">
+          <StatusButton
+            active={settled}
+            color={accent}
+            icon={Check}
+            label={type === "receita" ? "Já recebido" : "Já pago"}
+            onClick={() => setSettled(true)}
+          />
+          <StatusButton
+            active={!settled}
+            color="pastel-yellow"
+            icon={Clock}
+            label="Pendente"
+            onClick={() => setSettled(false)}
+          />
+        </div>
+        <p className="text-[10px] text-muted-foreground -mt-1">
+          Pendentes ficam como previsão e não mexem no saldo até você marcar como {type === "receita" ? "recebido" : "pago"}.
+        </p>
+
         <DialogFooter>
           <Button
             className="w-full"
@@ -310,6 +332,7 @@ export function AddTxDialog({
                 amount: v,
                 description: desc.trim(),
                 date,
+                settled,
               });
               setOpen(false);
               reset();
