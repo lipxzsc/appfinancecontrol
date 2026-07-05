@@ -20,6 +20,8 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   Lock,
+  Check,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
