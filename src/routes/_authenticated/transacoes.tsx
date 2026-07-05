@@ -119,6 +119,16 @@ function TransacoesPage() {
                   transactions: s.transactions.filter((x) => x.id !== id),
                 }))
               }
+              onToggleSettled={(id) =>
+                update((s) => ({
+                  ...s,
+                  transactions: s.transactions.map((x) =>
+                    x.id === id
+                      ? { ...x, settled: x.settled === false ? true : false }
+                      : x,
+                  ),
+                }))
+              }
             />
           ))}
         </div>
