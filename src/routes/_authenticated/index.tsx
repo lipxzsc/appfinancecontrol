@@ -126,6 +126,7 @@ function Overview() {
           color="pastel-green"
           Icon={ArrowUpRight}
           to="/transacoes"
+          hint={totals.receitasPendentes > 0 ? `${formatBRL(totals.receitasPendentes)} a receber` : undefined}
         />
         <SummaryCard
           label="Despesas do mês"
@@ -133,6 +134,7 @@ function Overview() {
           color="pastel-red"
           Icon={ArrowDownRight}
           to="/transacoes"
+          hint={totals.despesasPendentes > 0 ? `${formatBRL(totals.despesasPendentes)} a pagar` : undefined}
         />
       </div>
 
