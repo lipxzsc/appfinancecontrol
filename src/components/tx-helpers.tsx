@@ -414,15 +414,25 @@ function StatusButton({
 export function TxListItem({
   tx,
   onDelete,
+  onToggleSettled,
 }: {
   tx: Transaction;
   onDelete: () => void;
+  onToggleSettled?: () => void;
 }) {
   const isReceita = tx.type === "receita";
   const color = isReceita ? "var(--pastel-green)" : "var(--pastel-red)";
   const Icon = iconForCategory(tx.category);
+  const settled = tx.settled !== false;
+  const pendingColor = "var(--pastel-yellow)";
   return (
-    <li className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card/70 px-4 py-3">
+    <li
+      className="flex items-center gap-3 rounded-2xl border bg-card/70 px-4 py-3"
+      style={{
+        borderColor: settled ? "var(--border)" : pendingColor,
+        opacity: settled ? 1 : 0.85,
+      }}
+    >
       <div
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background/60"
         style={{ color }}
@@ -441,12 +451,41 @@ export function TxListItem({
               <span style={{ color }}>{labelForCategory(tx.category)}</span>
             </>
           )}
+          {!settled && (
+            <>
+              <span className="text-border">•</span>
+              <span style={{ color: pendingColor }}>
+                {isReceita ? "a receber" : "a pagar"}
+              </span>
+            </>
+          )}
         </div>
       </div>
-      <span className="text-sm font-semibold" style={{ color }}>
+      <span
+        className="text-sm font-semibold"
+        style={{
+          color: settled ? color : pendingColor,
+          textDecoration: settled ? undefined : "line-through",
+        }}
+      >
         {isReceita ? "+" : "-"}
         {formatBRL(tx.amount)}
       </span>
+      {onToggleSettled && (
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={settled ? "Marcar como pendente" : isReceita ? "Marcar como recebido" : "Marcar como pago"}
+          title={settled ? "Marcar como pendente" : isReceita ? "Marcar como recebido" : "Marcar como pago"}
+          onClick={onToggleSettled}
+        >
+          {settled ? (
+            <Check className="h-4 w-4" style={{ color }} />
+          ) : (
+            <Clock className="h-4 w-4" style={{ color: pendingColor }} />
+          )}
+        </Button>
+      )}
       <Button variant="ghost" size="icon" aria-label="Excluir" onClick={onDelete}>
         <Trash2 className="h-4 w-4" />
       </Button>
