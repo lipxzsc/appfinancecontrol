@@ -378,6 +378,38 @@ function TypeButton({
   );
 }
 
+function StatusButton({
+  active,
+  color,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  color: string;
+  icon: React.ElementType;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-all"
+      style={{
+        borderColor: active ? `var(--${color})` : "var(--border)",
+        background: active
+          ? `color-mix(in oklch, var(--${color}) 18%, transparent)`
+          : "transparent",
+        color: active ? `var(--${color})` : "var(--muted-foreground)",
+      }}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+    </button>
+  );
+}
+
 /** Item de lista de transação (reusado em Início e Transações). */
 export function TxListItem({
   tx,
