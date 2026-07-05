@@ -119,6 +119,16 @@ function TransacoesPage() {
                   transactions: s.transactions.filter((x) => x.id !== id),
                 }))
               }
+              onToggleSettled={(id) =>
+                update((s) => ({
+                  ...s,
+                  transactions: s.transactions.map((x) =>
+                    x.id === id
+                      ? { ...x, settled: x.settled === false ? true : false }
+                      : x,
+                  ),
+                }))
+              }
             />
           ))}
         </div>
@@ -134,12 +144,14 @@ function CategoryGroup({
   total,
   isReceita,
   onDelete,
+  onToggleSettled,
 }: {
   category: TxCategory;
-  items: { id: string; type: "receita" | "despesa"; amount: number; date: string; description: string; category?: TxCategory }[];
+  items: { id: string; type: "receita" | "despesa"; amount: number; date: string; description: string; category?: TxCategory; settled?: boolean }[];
   total: number;
   isReceita: boolean;
   onDelete: (id: string) => void;
+  onToggleSettled: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const Icon = iconForCategory(category);
@@ -176,7 +188,12 @@ function CategoryGroup({
       {open && (
         <ul className="space-y-2 px-2 pb-3">
           {items.map((t) => (
-            <TxListItem key={t.id} tx={t} onDelete={() => onDelete(t.id)} />
+            <TxListItem
+              key={t.id}
+              tx={t}
+              onDelete={() => onDelete(t.id)}
+              onToggleSettled={() => onToggleSettled(t.id)}
+            />
           ))}
         </ul>
       )}

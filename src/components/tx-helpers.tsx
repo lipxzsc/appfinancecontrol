@@ -20,6 +20,8 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   Lock,
+  Check,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -159,6 +161,7 @@ export function AddTxDialog({
   const [date, setDate] = useState(
     `${year}-${String(month + 1).padStart(2, "0")}-${String(defaultDay).padStart(2, "0")}`,
   );
+  const [settled, setSettled] = useState(true);
 
   // Modo bloqueado (limite Free atingido): vira CTA para /planos.
   if (lockedReason) {
@@ -182,6 +185,7 @@ export function AddTxDialog({
     setAmount("");
     setType("receita");
     setCategory(defaultCategory("receita"));
+    setSettled(true);
   };
 
   const handleTypeChange = (next: TxType) => {
@@ -291,6 +295,26 @@ export function AddTxDialog({
           />
         </div>
 
+        <div className="grid grid-cols-2 gap-2">
+          <StatusButton
+            active={settled}
+            color={accent}
+            icon={Check}
+            label={type === "receita" ? "Já recebido" : "Já pago"}
+            onClick={() => setSettled(true)}
+          />
+          <StatusButton
+            active={!settled}
+            color="pastel-yellow"
+            icon={Clock}
+            label="Pendente"
+            onClick={() => setSettled(false)}
+          />
+        </div>
+        <p className="text-[10px] text-muted-foreground -mt-1">
+          Pendentes ficam como previsão e não mexem no saldo até você marcar como {type === "receita" ? "recebido" : "pago"}.
+        </p>
+
         <DialogFooter>
           <Button
             className="w-full"
@@ -308,6 +332,7 @@ export function AddTxDialog({
                 amount: v,
                 description: desc.trim(),
                 date,
+                settled,
               });
               setOpen(false);
               reset();
@@ -353,19 +378,61 @@ function TypeButton({
   );
 }
 
+function StatusButton({
+  active,
+  color,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  color: string;
+  icon: React.ElementType;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-all"
+      style={{
+        borderColor: active ? `var(--${color})` : "var(--border)",
+        background: active
+          ? `color-mix(in oklch, var(--${color}) 18%, transparent)`
+          : "transparent",
+        color: active ? `var(--${color})` : "var(--muted-foreground)",
+      }}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+    </button>
+  );
+}
+
 /** Item de lista de transação (reusado em Início e Transações). */
 export function TxListItem({
   tx,
   onDelete,
+  onToggleSettled,
 }: {
   tx: Transaction;
   onDelete: () => void;
+  onToggleSettled?: () => void;
 }) {
   const isReceita = tx.type === "receita";
   const color = isReceita ? "var(--pastel-green)" : "var(--pastel-red)";
   const Icon = iconForCategory(tx.category);
+  const settled = tx.settled !== false;
+  const pendingColor = "var(--pastel-yellow)";
   return (
-    <li className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card/70 px-4 py-3">
+    <li
+      className="flex items-center gap-3 rounded-2xl border bg-card/70 px-4 py-3"
+      style={{
+        borderColor: settled ? "var(--border)" : pendingColor,
+        opacity: settled ? 1 : 0.85,
+      }}
+    >
       <div
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background/60"
         style={{ color }}
@@ -384,12 +451,41 @@ export function TxListItem({
               <span style={{ color }}>{labelForCategory(tx.category)}</span>
             </>
           )}
+          {!settled && (
+            <>
+              <span className="text-border">•</span>
+              <span style={{ color: pendingColor }}>
+                {isReceita ? "a receber" : "a pagar"}
+              </span>
+            </>
+          )}
         </div>
       </div>
-      <span className="text-sm font-semibold" style={{ color }}>
+      <span
+        className="text-sm font-semibold"
+        style={{
+          color: settled ? color : pendingColor,
+          textDecoration: settled ? undefined : "line-through",
+        }}
+      >
         {isReceita ? "+" : "-"}
         {formatBRL(tx.amount)}
       </span>
+      {onToggleSettled && (
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={settled ? "Marcar como pendente" : isReceita ? "Marcar como recebido" : "Marcar como pago"}
+          title={settled ? "Marcar como pendente" : isReceita ? "Marcar como recebido" : "Marcar como pago"}
+          onClick={onToggleSettled}
+        >
+          {settled ? (
+            <Check className="h-4 w-4" style={{ color }} />
+          ) : (
+            <Clock className="h-4 w-4" style={{ color: pendingColor }} />
+          )}
+        </Button>
+      )}
       <Button variant="ghost" size="icon" aria-label="Excluir" onClick={onDelete}>
         <Trash2 className="h-4 w-4" />
       </Button>

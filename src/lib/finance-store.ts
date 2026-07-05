@@ -28,6 +28,12 @@ export interface Transaction {
   description: string;
   amount: number;
   date: string; // ISO yyyy-mm-dd
+  /**
+   * Indica se a receita já foi recebida ou a despesa já foi paga.
+   * Somente lançamentos "settled" afetam o saldo — pendentes ficam
+   * como previsão até serem confirmados. Ausência = true (compat).
+   */
+  settled?: boolean;
 }
 export interface Goal {
   id: string;
@@ -195,21 +201,45 @@ export function computeMonthBalances(
   let carryOver = state.initialBalance;
   let receitasMes = 0;
   let despesasMes = 0;
+  let receitasRecebidas = 0;
+  let despesasPagas = 0;
+  let receitasPendentes = 0;
+  let despesasPendentes = 0;
   for (const t of state.transactions) {
     const k = txMonthKey(t);
+    const settled = t.settled !== false; // default true
     if (k < targetKey) {
-      carryOver += t.type === "receita" ? t.amount : -t.amount;
+      // Sobra do passado só entra quando efetivamente liquidada.
+      if (settled) carryOver += t.type === "receita" ? t.amount : -t.amount;
     } else if (k === targetKey) {
       if (t.type === "receita") receitasMes += t.amount;
       else despesasMes += t.amount;
+      if (t.type === "receita") {
+        if (settled) receitasRecebidas += t.amount;
+        else receitasPendentes += t.amount;
+      } else {
+        if (settled) despesasPagas += t.amount;
+        else despesasPendentes += t.amount;
+      }
     }
   }
   const rendimentoEstimado = state.investments.reduce(
     (s, i) => s + i.amount * (i.monthlyYieldPct / 100),
     0,
   );
-  const saldoFinal = carryOver + receitasMes + rendimentoEstimado - despesasMes;
-  return { carryOver, receitasMes, despesasMes, rendimentoEstimado, saldoFinal };
+  const saldoFinal =
+    carryOver + receitasRecebidas + rendimentoEstimado - despesasPagas;
+  return {
+    carryOver,
+    receitasMes,
+    despesasMes,
+    receitasRecebidas,
+    despesasPagas,
+    receitasPendentes,
+    despesasPendentes,
+    rendimentoEstimado,
+    saldoFinal,
+  };
 }
 
 export function formatBRL(n: number) {
