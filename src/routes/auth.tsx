@@ -81,23 +81,32 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-background">
-      <div
-        className="w-full max-w-sm rounded-3xl border border-border/60 p-6 shadow-[var(--shadow-soft)] space-y-5"
-        style={{ background: "var(--gradient-card)" }}
-      >
-        <header className="text-center space-y-1">
-          <div className="mx-auto h-10 w-10 rounded-2xl grid place-items-center" style={{ background: "var(--gradient-primary)" }}>
+    <div className="relative min-h-screen flex items-center justify-center px-4 py-8 overflow-hidden bg-[#07070d] text-foreground">
+      {/* Fundo animado */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+        <div className="auth-blob auth-blob-1" />
+        <div className="auth-blob auth-blob-2" />
+        <div className="auth-blob auth-blob-3" />
+        <div className="auth-grid" />
+      </div>
+      <style>{authKeyframes}</style>
+
+      <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-6 shadow-[0_20px_60px_-20px_rgba(0,0,0,.7)] space-y-5">
+        <header className="text-center space-y-1.5">
+          <div
+            className="mx-auto h-11 w-11 rounded-2xl grid place-items-center shadow-lg shadow-primary/30"
+            style={{ background: "var(--gradient-primary)" }}
+          >
             <Sparkles className="h-5 w-5 text-foreground" />
           </div>
-          <h1 className="text-xl font-semibold">FinControl</h1>
+          <h1 className="text-xl font-semibold tracking-tight">FinControl</h1>
           <p className="text-xs text-muted-foreground">
-            {mode === "login" ? "Entre para acessar suas finanças" : "Crie sua conta em segundos"}
+            {mode === "login" ? "Bem-vindo de volta ✨" : "Vamos criar sua conta"}
           </p>
         </header>
 
         <Tabs value={mode} onValueChange={(v) => setMode(v as "login" | "signup")}>
-          <TabsList className="grid grid-cols-2 w-full">
+          <TabsList className="grid grid-cols-2 w-full bg-white/5 border border-white/10">
             <TabsTrigger value="login">Entrar</TabsTrigger>
             <TabsTrigger value="signup">Criar conta</TabsTrigger>
           </TabsList>
@@ -181,3 +190,14 @@ function translate(msg: string) {
   if (/password should be at least/i.test(msg)) return "A senha precisa ter pelo menos 6 caracteres";
   return msg;
 }
+
+const authKeyframes = `
+.auth-blob { position:absolute; border-radius:9999px; filter: blur(60px); opacity:.55; mix-blend-mode:screen; }
+.auth-blob-1 { width:340px; height:340px; background:radial-gradient(circle,#3b82f6,transparent 70%); top:-80px; left:-80px; animation: auth-float1 14s ease-in-out infinite; }
+.auth-blob-2 { width:380px; height:380px; background:radial-gradient(circle,#ec4899,transparent 70%); bottom:-120px; right:-100px; animation: auth-float2 16s ease-in-out infinite; }
+.auth-blob-3 { width:280px; height:280px; background:radial-gradient(circle,#8b5cf6,transparent 70%); top:40%; left:40%; animation: auth-float3 18s ease-in-out infinite; }
+.auth-grid { position:absolute; inset:0; background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); background-size: 32px 32px; mask-image: radial-gradient(ellipse at center, black 40%, transparent 75%); }
+@keyframes auth-float1 { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(40px,60px) scale(1.15);} }
+@keyframes auth-float2 { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(-50px,-40px) scale(1.1);} }
+@keyframes auth-float3 { 0%,100%{transform:translate(0,0) scale(1);} 33%{transform:translate(-60px,30px) scale(1.2);} 66%{transform:translate(50px,-40px) scale(.9);} }
+`;
