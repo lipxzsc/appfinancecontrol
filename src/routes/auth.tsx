@@ -81,23 +81,32 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-background">
-      <div
-        className="w-full max-w-sm rounded-3xl border border-border/60 p-6 shadow-[var(--shadow-soft)] space-y-5"
-        style={{ background: "var(--gradient-card)" }}
-      >
-        <header className="text-center space-y-1">
-          <div className="mx-auto h-10 w-10 rounded-2xl grid place-items-center" style={{ background: "var(--gradient-primary)" }}>
+    <div className="relative min-h-screen flex items-center justify-center px-4 py-8 overflow-hidden bg-[#07070d] text-foreground">
+      {/* Fundo animado */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+        <div className="auth-blob auth-blob-1" />
+        <div className="auth-blob auth-blob-2" />
+        <div className="auth-blob auth-blob-3" />
+        <div className="auth-grid" />
+      </div>
+      <style>{authKeyframes}</style>
+
+      <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-6 shadow-[0_20px_60px_-20px_rgba(0,0,0,.7)] space-y-5">
+        <header className="text-center space-y-1.5">
+          <div
+            className="mx-auto h-11 w-11 rounded-2xl grid place-items-center shadow-lg shadow-primary/30"
+            style={{ background: "var(--gradient-primary)" }}
+          >
             <Sparkles className="h-5 w-5 text-foreground" />
           </div>
-          <h1 className="text-xl font-semibold">FinControl</h1>
+          <h1 className="text-xl font-semibold tracking-tight">FinControl</h1>
           <p className="text-xs text-muted-foreground">
-            {mode === "login" ? "Entre para acessar suas finanças" : "Crie sua conta em segundos"}
+            {mode === "login" ? "Bem-vindo de volta ✨" : "Vamos criar sua conta"}
           </p>
         </header>
 
         <Tabs value={mode} onValueChange={(v) => setMode(v as "login" | "signup")}>
-          <TabsList className="grid grid-cols-2 w-full">
+          <TabsList className="grid grid-cols-2 w-full bg-white/5 border border-white/10">
             <TabsTrigger value="login">Entrar</TabsTrigger>
             <TabsTrigger value="signup">Criar conta</TabsTrigger>
           </TabsList>
