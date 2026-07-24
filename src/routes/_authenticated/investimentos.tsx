@@ -240,26 +240,55 @@ function Simulator({ cdi }: { cdi: number }) {
   const [initial, setInitial] = useState("1000");
   const [monthly, setMonthly] = useState("300");
   const [months, setMonths] = useState(60);
-  const [yieldPct, setYieldPct] = useState(cdi.toFixed(2));
+  const [unit, setUnit] = useState<"meses" | "anos">("meses");
+  // Modo de taxa: mensal fixa, anual fixa, %CDI ou preset comum
+  const [rateMode, setRateMode] = useState<"mensal" | "anual" | "cdi" | "preset">("mensal");
+  const [monthlyRate, setMonthlyRate] = useState(cdi.toFixed(2));
+  const [annualRate, setAnnualRate] = useState("12");
+  const [pctCdi, setPctCdi] = useState("100");
+  const [preset, setPreset] = useState<"poupanca" | "cdb100" | "cdb120" | "selic" | "ibov">("cdb100");
+
+  // Presets aproximados (podem ser ajustados a qualquer momento)
+  const PRESETS: Record<typeof preset, { label: string; monthly: number }> = {
+    poupanca: { label: "Poupança (~0,50% a.m.)", monthly: 0.5 },
+    cdb100: { label: "CDB 100% CDI", monthly: cdi },
+    cdb120: { label: "CDB 120% CDI", monthly: cdi * 1.2 },
+    selic: { label: "Tesouro Selic", monthly: cdi * 0.98 },
+    ibov: { label: "Ações/IBOV (~1,00% a.m.)", monthly: 1.0 },
+  };
+
+  // Taxa mensal efetiva conforme o modo escolhido
+  const monthlyPct = useMemo(() => {
+    if (rateMode === "mensal") return parseFloat(monthlyRate) || 0;
+    if (rateMode === "anual") {
+      const a = parseFloat(annualRate) || 0;
+      return (Math.pow(1 + a / 100, 1 / 12) - 1) * 100;
+    }
+    if (rateMode === "cdi") return (cdi * (parseFloat(pctCdi) || 0)) / 100;
+    return PRESETS[preset].monthly;
+  }, [rateMode, monthlyRate, annualRate, pctCdi, preset, cdi]);
+
+  const totalMonths = unit === "anos" ? months * 12 : months;
 
   const data = useMemo(() => {
     const ini = parseFloat(initial) || 0;
     const ap = parseFloat(monthly) || 0;
-    const r = (parseFloat(yieldPct) || 0) / 100;
+    const r = monthlyPct / 100;
     const out: { mes: number; total: number; aportado: number }[] = [];
     let saldo = ini;
     let aportado = ini;
     out.push({ mes: 0, total: Math.round(saldo), aportado: Math.round(aportado) });
-    for (let m = 1; m <= months; m++) {
+    for (let m = 1; m <= totalMonths; m++) {
       saldo = saldo * (1 + r) + ap;
       aportado += ap;
       out.push({ mes: m, total: Math.round(saldo), aportado: Math.round(aportado) });
     }
     return out;
-  }, [initial, monthly, months, yieldPct]);
+  }, [initial, monthly, totalMonths, monthlyPct]);
 
   const last = data[data.length - 1];
   const lucro = last.total - last.aportado;
+  const annualEquiv = (Math.pow(1 + monthlyPct / 100, 12) - 1) * 100;
 
   return (
     <section
@@ -280,15 +309,90 @@ function Simulator({ cdi }: { cdi: number }) {
           <Label>Aporte/mês (R$)</Label>
           <Input type="number" value={monthly} onChange={(e) => setMonthly(e.target.value)} />
         </div>
+
+        {/* Tipo de taxa */}
+        <div className="grid gap-1.5 col-span-2">
+          <Label>Tipo de rendimento</Label>
+          <Select value={rateMode} onValueChange={(v) => setRateMode(v as typeof rateMode)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="mensal">Taxa mensal fixa (%)</SelectItem>
+              <SelectItem value="anual">Taxa anual fixa (%)</SelectItem>
+              <SelectItem value="cdi">% do CDI</SelectItem>
+              <SelectItem value="preset">Investimento comum</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {rateMode === "mensal" && (
+          <div className="grid gap-1.5 col-span-2">
+            <Label>Rendimento mensal (%)</Label>
+            <Input type="number" value={monthlyRate} onChange={(e) => setMonthlyRate(e.target.value)} />
+          </div>
+        )}
+        {rateMode === "anual" && (
+          <div className="grid gap-1.5 col-span-2">
+            <Label>Rendimento anual (%)</Label>
+            <Input type="number" value={annualRate} onChange={(e) => setAnnualRate(e.target.value)} />
+          </div>
+        )}
+        {rateMode === "cdi" && (
+          <div className="grid gap-1.5 col-span-2">
+            <Label>% do CDI (CDI atual {cdi.toFixed(2)}% a.m.)</Label>
+            <Input type="number" value={pctCdi} onChange={(e) => setPctCdi(e.target.value)} />
+          </div>
+        )}
+        {rateMode === "preset" && (
+          <div className="grid gap-1.5 col-span-2">
+            <Label>Investimento</Label>
+            <Select value={preset} onValueChange={(v) => setPreset(v as typeof preset)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(PRESETS).map(([k, p]) => (
+                  <SelectItem key={k} value={k}>{p.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Unidade de período */}
         <div className="grid gap-1.5">
-          <Label>Rendimento mensal (%)</Label>
-          <Input type="number" value={yieldPct} onChange={(e) => setYieldPct(e.target.value)} />
+          <Label>Período em</Label>
+          <Select
+            value={unit}
+            onValueChange={(v) => {
+              const nu = v as "meses" | "anos";
+              // Converte para manter a duração equivalente
+              setMonths((m) => (nu === "anos" ? Math.max(1, Math.round(m / 12)) : m * 12));
+              setUnit(nu);
+            }}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="meses">Meses</SelectItem>
+              <SelectItem value="anos">Anos</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="grid gap-1.5">
-          <Label>Período: {months} meses</Label>
-          <Slider value={[months]} min={6} max={360} step={6} onValueChange={(v) => setMonths(v[0])} />
+          <Label>
+            {unit === "anos" ? `${months} anos` : `${months} meses`}
+          </Label>
+          <Slider
+            value={[months]}
+            min={unit === "anos" ? 1 : 6}
+            max={unit === "anos" ? 40 : 360}
+            step={unit === "anos" ? 1 : 6}
+            onValueChange={(v) => setMonths(v[0])}
+          />
         </div>
       </div>
+
+      <p className="text-[11px] text-muted-foreground -mt-1">
+        Taxa aplicada: <b>{monthlyPct.toFixed(3)}% a.m.</b> · equivalente a{" "}
+        <b>{annualEquiv.toFixed(2)}% a.a.</b>
+      </p>
 
       <div className="grid grid-cols-3 gap-2 text-center">
         <Stat label="Total" value={formatBRL(last.total)} />
@@ -300,7 +404,15 @@ function Simulator({ cdi }: { cdi: number }) {
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="mes" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} axisLine={false} tickLine={false} />
+            <XAxis
+              dataKey="mes"
+              tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v: number) =>
+                unit === "anos" && v % 12 === 0 ? `${v / 12}a` : `${v}m`
+              }
+            />
             <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} axisLine={false} tickLine={false} width={50}
               tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
             <Tooltip
@@ -312,7 +424,9 @@ function Simulator({ cdi }: { cdi: number }) {
                 fontSize: 12,
               }}
               formatter={(v: number, name) => [formatBRL(v), name === "total" ? "Total" : "Aportado"]}
-              labelFormatter={(l) => `Mês ${l}`}
+              labelFormatter={(l: number) =>
+                l % 12 === 0 ? `${l} meses (${l / 12} anos)` : `Mês ${l}`
+              }
             />
             <Line type="monotone" dataKey="aportado" stroke="var(--muted-foreground)" strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="total" stroke="var(--pastel-blue)" strokeWidth={2.5} dot={false} />
