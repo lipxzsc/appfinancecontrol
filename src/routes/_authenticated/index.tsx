@@ -9,6 +9,8 @@ import {
   FileText,
   FileSpreadsheet,
   Lock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { MonthCarousel } from "@/components/month-carousel";
 import { Button } from "@/components/ui/button";
@@ -48,6 +50,19 @@ function Overview() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
+  // Privacidade: alterna visibilidade dos valores em tela (persistido).
+  const [hideValues, setHideValues] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("fc:hideValues") === "1";
+  });
+  const toggleHide = () => {
+    setHideValues((v) => {
+      const nv = !v;
+      try { localStorage.setItem("fc:hideValues", nv ? "1" : "0"); } catch {}
+      return nv;
+    });
+  };
+  const mask = (v: string) => (hideValues ? "R$ ••••" : v);
   const { state, update } = useFinance();
   const plan = usePlan();
   const currentKey = monthKey(year, month);
@@ -93,13 +108,25 @@ function Overview() {
         className="rounded-3xl p-5 shadow-[var(--shadow-soft)] border border-border/60"
         style={{ background: "var(--gradient-card)" }}
       >
-        <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
-          <Wallet className="h-3.5 w-3.5" />
-          Saldo atual
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+            <Wallet className="h-3.5 w-3.5" />
+            Saldo atual
+          </div>
+          <button
+            type="button"
+            onClick={toggleHide}
+            aria-label={hideValues ? "Mostrar valores" : "Ocultar valores"}
+            className="rounded-full p-1.5 text-muted-foreground hover:text-foreground hover:bg-background/60 transition-colors"
+          >
+            {hideValues ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
         </div>
-        <p className="mt-1 text-3xl font-semibold">{formatBRL(totals.saldoFinal)}</p>
+        <p className="mt-1 text-3xl font-semibold tabular-nums">
+          {mask(formatBRL(totals.saldoFinal))}
+        </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Inclui sobra anterior de {formatBRL(totals.carryOver)}
+          Inclui sobra anterior de {mask(formatBRL(totals.carryOver))}
         </p>
       </section>
 
@@ -107,14 +134,14 @@ function Overview() {
       <div className="grid grid-cols-2 gap-3">
         <SummaryCard
           label="Investimentos"
-          value={formatBRL(totalInvestido)}
+          value={mask(formatBRL(totalInvestido))}
           color="pastel-purple"
           Icon={TrendingUp}
           to="/investimentos"
         />
         <SummaryCard
           label="Rendimento /mês"
-          value={formatBRL(totals.rendimentoEstimado)}
+          value={mask(formatBRL(totals.rendimentoEstimado))}
           color="pastel-blue"
           Icon={Sparkles}
           to="/investimentos"
@@ -122,19 +149,19 @@ function Overview() {
         />
         <SummaryCard
           label="Receitas do mês"
-          value={formatBRL(totals.receitasMes)}
+          value={mask(formatBRL(totals.receitasMes))}
           color="pastel-green"
           Icon={ArrowUpRight}
           to="/transacoes"
-          hint={totals.receitasPendentes > 0 ? `${formatBRL(totals.receitasPendentes)} a receber` : undefined}
+          hint={totals.receitasPendentes > 0 ? `${mask(formatBRL(totals.receitasPendentes))} a receber` : undefined}
         />
         <SummaryCard
           label="Despesas do mês"
-          value={formatBRL(totals.despesasMes)}
+          value={mask(formatBRL(totals.despesasMes))}
           color="pastel-red"
           Icon={ArrowDownRight}
           to="/transacoes"
-          hint={totals.despesasPendentes > 0 ? `${formatBRL(totals.despesasPendentes)} a pagar` : undefined}
+          hint={totals.despesasPendentes > 0 ? `${mask(formatBRL(totals.despesasPendentes))} a pagar` : undefined}
         />
       </div>
 
