@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Plus, Trash2, TrendingUp } from "lucide-react";
+import { Plus, Trash2, TrendingUp, Calendar, Sparkles, PiggyBank, Coins, LineChart as LineIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -296,23 +296,33 @@ function Simulator({ cdi }: { cdi: number }) {
       style={{ background: "var(--gradient-card)" }}
     >
       <div>
-        <h3 className="text-base font-semibold">Simulador de juros compostos</h3>
-        <p className="text-xs text-muted-foreground">Veja o crescimento ao longo do tempo</p>
+        <div className="flex items-center gap-2">
+          <div
+            className="h-8 w-8 rounded-xl grid place-items-center"
+            style={{ background: "color-mix(in oklab, var(--pastel-purple) 40%, transparent)" }}
+          >
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold">Simulador de juros compostos</h3>
+            <p className="text-xs text-muted-foreground">Veja seu dinheirinho crescer com o tempo</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="grid gap-1.5">
-          <Label>Inicial (R$)</Label>
+          <Label className="flex items-center gap-1.5"><PiggyBank className="h-3.5 w-3.5" /> Inicial (R$)</Label>
           <Input type="number" value={initial} onChange={(e) => setInitial(e.target.value)} />
         </div>
         <div className="grid gap-1.5">
-          <Label>Aporte/mês (R$)</Label>
+          <Label className="flex items-center gap-1.5"><Coins className="h-3.5 w-3.5" /> Aporte/mês (R$)</Label>
           <Input type="number" value={monthly} onChange={(e) => setMonthly(e.target.value)} />
         </div>
 
         {/* Tipo de taxa */}
         <div className="grid gap-1.5 col-span-2">
-          <Label>Tipo de rendimento</Label>
+          <Label className="flex items-center gap-1.5"><LineIcon className="h-3.5 w-3.5" /> Tipo de rendimento</Label>
           <Select value={rateMode} onValueChange={(v) => setRateMode(v as typeof rateMode)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -358,7 +368,7 @@ function Simulator({ cdi }: { cdi: number }) {
 
         {/* Unidade de período */}
         <div className="grid gap-1.5">
-          <Label>Período em</Label>
+          <Label className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> Período em</Label>
           <Select
             value={unit}
             onValueChange={(v) => {
@@ -386,6 +396,33 @@ function Simulator({ cdi }: { cdi: number }) {
             step={unit === "anos" ? 1 : 6}
             onValueChange={(v) => setMonths(v[0])}
           />
+        </div>
+
+        {/* Presets rápidos de período */}
+        <div className="col-span-2 flex flex-wrap gap-2">
+          {(unit === "anos"
+            ? [1, 3, 5, 10, 20, 30]
+            : [6, 12, 24, 60, 120, 240]
+          ).map((p) => {
+            const active = months === p;
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setMonths(p)}
+                className="rounded-full border px-3 py-1 text-xs transition-colors"
+                style={{
+                  borderColor: active ? "var(--pastel-blue)" : "var(--border)",
+                  background: active
+                    ? "color-mix(in oklab, var(--pastel-blue) 25%, transparent)"
+                    : "var(--card)",
+                  color: active ? "var(--foreground)" : "var(--muted-foreground)",
+                }}
+              >
+                {p} {unit === "anos" ? (p === 1 ? "ano" : "anos") : "meses"}
+              </button>
+            );
+          })}
         </div>
       </div>
 
