@@ -12,12 +12,13 @@ interface Props {
   autoComplete?: string;
   placeholder?: string;
   showCharacter?: boolean;
+  characterSize?: number;
 }
 
 export function PasswordField({
   value, onChange, label = "Senha", id = "password",
   autoComplete = "current-password", placeholder = "••••••••",
-  showCharacter = false,
+  showCharacter = false, characterSize = 80,
 }: Props) {
   const [show, setShow] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -25,8 +26,8 @@ export function PasswordField({
   return (
     <div className="grid gap-2">
       {showCharacter && (
-        <div className="flex justify-center pb-1">
-          <EyeCharacter open={show} typing={focused && value.length > 0} />
+        <div className="flex h-20 justify-center">
+          <EyeCharacter open={show} typing={focused && value.length > 0} size={characterSize} />
         </div>
       )}
       {label && <Label htmlFor={id}>{label}</Label>}
@@ -40,7 +41,7 @@ export function PasswordField({
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          className="pr-10"
+          className="pr-11"
         />
         <button
           type="button"

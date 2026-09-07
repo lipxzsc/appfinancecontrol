@@ -72,9 +72,15 @@ function compute(): PlanState {
 
 /** Hook reativo que retorna o estado do plano e atualiza a cada minuto. */
 export function usePlan(): PlanState {
-  const [state, setState] = useState<PlanState>(() => compute());
+  const [state, setState] = useState<PlanState>({
+    isPro: false,
+    expiresAt: null,
+    msLeft: 0,
+    daysLeft: 0,
+  });
   useEffect(() => {
     const l = () => setState(compute());
+    l();
     listeners.add(l);
     const t = setInterval(l, 60_000);
     return () => {
