@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Wallet,
   TrendingUp,
@@ -51,10 +51,10 @@ function Overview() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   // Privacidade: alterna visibilidade dos valores em tela (persistido).
-  const [hideValues, setHideValues] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("fc:hideValues") === "1";
-  });
+  const [hideValues, setHideValues] = useState(false);
+  useEffect(() => {
+    setHideValues(localStorage.getItem("fc:hideValues") === "1");
+  }, []);
   const toggleHide = () => {
     setHideValues((v) => {
       const nv = !v;
@@ -93,7 +93,7 @@ function Overview() {
     !plan.isPro && monthTxs.length >= FREE_LIMITS.transactionsPerMonth;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 animate-fade-in">
       <MonthCarousel
         year={year}
         month={month}
@@ -105,12 +105,12 @@ function Overview() {
 
       {/* Cartão principal: saldo atual do mês */}
       <section
-        className="rounded-3xl p-5 shadow-[var(--shadow-soft)] border border-border/60"
+        className="rounded-2xl p-5 shadow-[var(--shadow-soft)] border border-border backdrop-blur-xl sm:p-6"
         style={{ background: "var(--gradient-card)" }}
       >
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
-            <Wallet className="h-3.5 w-3.5" />
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/12 text-primary"><Wallet className="h-3.5 w-3.5" /></span>
             Saldo atual
           </div>
           <button
@@ -122,7 +122,7 @@ function Overview() {
             {hideValues ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
-        <p className="mt-1 text-3xl font-semibold tabular-nums">
+        <p className="mt-3 font-display text-3xl font-semibold tabular-nums sm:text-4xl">
           {mask(formatBRL(totals.saldoFinal))}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -131,7 +131,7 @@ function Overview() {
       </section>
 
       {/* Grid com cartões de resumo */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <SummaryCard
           label="Investimentos"
           value={mask(formatBRL(totalInvestido))}
@@ -172,7 +172,7 @@ function Overview() {
       />
 
       {/* Novo lançamento — a lista detalhada vive na página Transações. */}
-      <section className="flex items-center justify-between rounded-2xl border border-border/60 bg-card/70 px-4 py-3">
+      <section className="flex items-center justify-between rounded-2xl border border-border bg-card/55 px-4 py-3 backdrop-blur-xl">
         <div>
           <h2 className="text-sm font-semibold">Adicionar lançamento</h2>
           <p className="text-[11px] text-muted-foreground">
@@ -231,7 +231,7 @@ function SummaryCard({
   return (
     <Link
       to={to}
-      className="rounded-2xl border border-border/60 bg-card/70 p-4 transition-colors hover:bg-card"
+       className="rounded-2xl border border-border bg-card/55 p-4 shadow-[var(--shadow-soft)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:bg-card"
     >
       <div
         className="flex h-9 w-9 items-center justify-center rounded-full bg-background/60"

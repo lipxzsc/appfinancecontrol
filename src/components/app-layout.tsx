@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, ArrowLeftRight, PieChart, Target, TrendingUp, LogOut, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
+import { Home, ArrowLeftRight, PieChart, Target, TrendingUp, LogOut, User as UserIcon, Settings as SettingsIcon, WalletCards } from "lucide-react";
 import { useEffect, useState, type ComponentType } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -68,14 +68,14 @@ export function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto max-w-3xl px-4 pt-6 pb-28">
-        <header className="mb-6 flex items-center gap-3">
+    <div className="min-h-screen text-foreground">
+      <div className="mx-auto max-w-5xl px-4 pb-28 pt-4 sm:px-6 sm:pt-6">
+        <header className="mb-6 flex items-center gap-3 rounded-2xl border border-border bg-card/50 px-3 py-3 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:px-4">
           {signedIn ? (
             <Link
               to="/configuracoes"
               aria-label="Configurações"
-              className="h-10 w-10 rounded-2xl grid place-items-center text-xl overflow-hidden shrink-0 transition-transform hover:scale-105"
+              className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl text-xl transition-transform hover:scale-105"
               style={{ background: "var(--gradient-primary)" }}
             >
               {avatar && avatar.startsWith("http") ? (
@@ -85,10 +85,10 @@ export function AppLayout() {
               )}
             </Link>
           ) : (
-            <div className="h-10 w-10 rounded-2xl" style={{ background: "var(--gradient-primary)" }} />
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground"><WalletCards className="h-5 w-5" /></div>
           )}
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-semibold leading-tight">FinControl</h1>
+            <h1 className="font-display text-lg font-semibold leading-tight">FinControl</h1>
             <p className="text-xs text-muted-foreground truncate">
               {displayName ? `Olá, ${displayName}` : "Receitas, sonhos e investimentos"}
             </p>
@@ -113,16 +113,16 @@ export function AppLayout() {
         </header>
         <Outlet />
       </div>
-      <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border/60 bg-card/90 backdrop-blur">
-        <div className="mx-auto max-w-3xl grid grid-cols-5">
+      <nav className="fixed inset-x-3 bottom-3 z-40 mx-auto max-w-2xl rounded-2xl border border-border bg-card/90 shadow-2xl backdrop-blur-xl sm:bottom-5">
+        <div className="grid grid-cols-5 p-1">
           {NAV.map(({ to, label, Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             return (
               <Link
                 key={to}
                 to={to}
-                className={`flex flex-col items-center gap-1 py-3 text-[10px] transition-colors ${
-                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                className={`flex min-w-0 flex-col items-center gap-1 rounded-xl py-2.5 text-[10px] transition-all ${
+                   active ? "bg-primary/12 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 }`}
               >
                 <Icon className="h-5 w-5" />

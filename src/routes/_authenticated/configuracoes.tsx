@@ -86,7 +86,7 @@ function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 animate-fade-in">
       <header className="flex items-center gap-2">
         <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/" })} aria-label="Voltar">
           <ArrowLeft className="h-4 w-4" />
@@ -99,7 +99,7 @@ function SettingsPage() {
 
       {/* Perfil */}
       <section
-        className="rounded-3xl border border-border/60 p-5 space-y-4"
+        className="rounded-2xl border border-border p-5 space-y-4 shadow-[var(--shadow-soft)] backdrop-blur-xl"
         style={{ background: "var(--gradient-card)" }}
       >
         <div className="flex items-center gap-3">
@@ -162,7 +162,7 @@ function SettingsPage() {
 
       {/* E-mail */}
       <section
-        className="rounded-3xl border border-border/60 p-5 space-y-4"
+        className="rounded-2xl border border-border p-5 space-y-4 shadow-[var(--shadow-soft)] backdrop-blur-xl"
         style={{ background: "var(--gradient-card)" }}
       >
         <div className="flex items-center gap-2">
@@ -193,7 +193,7 @@ function SettingsPage() {
 
       {/* Senha */}
       <section
-        className="rounded-3xl border border-border/60 p-5 space-y-4"
+        className="rounded-2xl border border-border p-5 space-y-4 shadow-[var(--shadow-soft)] backdrop-blur-xl"
         style={{ background: "var(--gradient-card)" }}
       >
         <div className="flex items-center gap-2">

@@ -106,7 +106,7 @@ function OrcamentoPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 animate-fade-in">
       <MonthCarousel
         year={year}
         month={month}
@@ -118,7 +118,7 @@ function OrcamentoPage() {
 
       {/* Gráfico de distribuição das despesas (estilo doughnut) */}
       <section
-        className="relative rounded-3xl border border-border/60 p-5 shadow-[var(--shadow-soft)]"
+        className="relative rounded-2xl border border-border p-5 shadow-[var(--shadow-soft)] backdrop-blur-xl"
         style={{ background: "var(--gradient-card)" }}
       >
         <h2 className="text-base font-semibold">Distribuição de Despesas</h2>
@@ -246,7 +246,7 @@ function BudgetRow({
   const overflow = limit > 0 && spent > limit;
 
   return (
-    <li className="rounded-2xl border border-border/60 bg-card/70 p-3">
+    <li className="rounded-2xl border border-border bg-card/55 p-3 shadow-[var(--shadow-soft)] backdrop-blur-xl">
       <div className="flex items-center gap-3">
         <div
           className="flex h-9 w-9 items-center justify-center rounded-full bg-background/60"

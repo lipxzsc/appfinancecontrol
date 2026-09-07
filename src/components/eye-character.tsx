@@ -108,7 +108,7 @@ export function EyeCharacter({ open, typing, size = 96 }: Props) {
           </radialGradient>
           <radialGradient id="ec-hand" cx="50%" cy="35%" r="70%">
             <stop offset="0%" stopColor="var(--pastel-blue)" stopOpacity="1" />
-            <stop offset="100%" stopColor="var(--pastel-purple, #c9b8ff)" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="var(--pastel-purple)" stopOpacity="0.95" />
           </radialGradient>
         </defs>
 
@@ -124,7 +124,7 @@ export function EyeCharacter({ open, typing, size = 96 }: Props) {
 
         {/* face */}
         <circle cx="60" cy="62" r="44" fill="url(#ec-face)" />
-        <circle cx="60" cy="62" r="44" fill="none" stroke="rgba(0,0,0,.12)" strokeWidth="1.5" />
+        <circle cx="60" cy="62" r="44" fill="none" stroke="var(--border)" strokeWidth="1.5" />
 
         {/* cheeks */}
         <circle cx="32" cy="74" r="6.5" fill="var(--pastel-pink)" opacity="0.6" />
@@ -143,8 +143,8 @@ export function EyeCharacter({ open, typing, size = 96 }: Props) {
           }}
         >
           <g style={{ animation: open && wave ? "ec-wave 0.6s ease-in-out 2" : undefined, transformOrigin: "60px 60px" }}>
-            <ellipse cx="42" cy="58" rx="16" ry="13" fill="url(#ec-hand)" stroke="rgba(0,0,0,.18)" strokeWidth="1.3" />
-            <ellipse cx="78" cy="58" rx="16" ry="13" fill="url(#ec-hand)" stroke="rgba(0,0,0,.18)" strokeWidth="1.3" />
+            <ellipse cx="42" cy="58" rx="16" ry="13" fill="url(#ec-hand)" stroke="var(--border)" strokeWidth="1.3" />
+            <ellipse cx="78" cy="58" rx="16" ry="13" fill="url(#ec-hand)" stroke="var(--border)" strokeWidth="1.3" />
             {!open && (
               <>
                 <path d="M36 58 q6 -2 12 0" stroke="rgba(0,0,0,.25)" strokeWidth="1" fill="none" />
