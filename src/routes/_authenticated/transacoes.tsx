@@ -79,7 +79,7 @@ function TransacoesPage() {
   }, [monthTxs]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 animate-fade-in">
       <MonthCarousel
         year={year}
         month={month}
@@ -101,7 +101,7 @@ function TransacoesPage() {
       </div>
 
       {monthTxs.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+        <div className="rounded-2xl border border-dashed border-border bg-card/35 p-8 text-center text-sm text-muted-foreground backdrop-blur-xl">
           Nenhum lançamento neste mês ainda.
         </div>
       ) : (
@@ -157,11 +157,11 @@ function CategoryGroup({
   const Icon = iconForCategory(category);
   const color = isReceita ? "var(--pastel-green)" : "var(--pastel-red)";
   return (
-    <section className="rounded-2xl border border-border/60 bg-card/50">
+    <section className="rounded-2xl border border-border bg-card/55 shadow-[var(--shadow-soft)] backdrop-blur-xl">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-3 px-4 py-3"
+        className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 transition-colors hover:bg-secondary/60"
       >
         <div
           className="flex h-9 w-9 items-center justify-center rounded-full bg-background/60"

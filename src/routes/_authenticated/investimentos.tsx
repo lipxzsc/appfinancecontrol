@@ -44,7 +44,7 @@ function InvestPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 animate-fade-in">
       <header>
         <h2 className="text-xl font-semibold">Investimentos</h2>
         <p className="text-sm text-muted-foreground">
@@ -53,7 +53,7 @@ function InvestPage() {
       </header>
 
       <section
-        className="rounded-3xl p-5 border border-border/60 shadow-[var(--shadow-soft)] grid grid-cols-2 gap-3"
+        className="rounded-2xl p-5 border border-border shadow-[var(--shadow-soft)] grid grid-cols-2 gap-3 backdrop-blur-xl"
         style={{ background: "var(--gradient-card)" }}
       >
         <div>
@@ -89,7 +89,7 @@ function InvestPage() {
         {state.investments.map((i) => (
           <li
             key={i.id}
-            className="flex items-center gap-3 rounded-2xl bg-card/70 border border-border/60 px-4 py-3"
+            className="flex items-center gap-3 rounded-2xl bg-card/55 border border-border px-4 py-3 shadow-[var(--shadow-soft)] backdrop-blur-xl"
           >
             <div
               className="h-10 w-10 rounded-xl grid place-items-center"
@@ -292,7 +292,7 @@ function Simulator({ cdi }: { cdi: number }) {
 
   return (
     <section
-      className="rounded-3xl p-5 border border-border/60 shadow-[var(--shadow-soft)] space-y-4"
+      className="rounded-2xl p-5 border border-border shadow-[var(--shadow-soft)] space-y-4 backdrop-blur-xl"
       style={{ background: "var(--gradient-card)" }}
     >
       <div>

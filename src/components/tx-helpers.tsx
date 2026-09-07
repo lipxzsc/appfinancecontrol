@@ -96,7 +96,7 @@ export function InitialBalanceCard({
   const [editing, setEditing] = useState(false);
   const [input, setInput] = useState(String(value));
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card/70 px-4 py-3">
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card/55 px-4 py-3 shadow-[var(--shadow-soft)] backdrop-blur-xl">
       <PiggyBank className="h-5 w-5" style={{ color: "var(--pastel-yellow)" }} />
       <div className="flex-1">
         <p className="text-xs text-muted-foreground">Saldo inicial das operações</p>
@@ -210,7 +210,7 @@ export function AddTxDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-1 rounded-full">
+        <Button size="sm" className="gap-1">
           <Plus className="h-4 w-4" /> Novo
         </Button>
       </DialogTrigger>
@@ -427,7 +427,7 @@ export function TxListItem({
   const pendingColor = "var(--pastel-yellow)";
   return (
     <li
-      className="flex items-center gap-3 rounded-2xl border bg-card/70 px-4 py-3"
+      className="flex items-center gap-3 rounded-2xl border bg-card/55 px-4 py-3 shadow-[var(--shadow-soft)] backdrop-blur-xl"
       style={{
         borderColor: settled ? "var(--border)" : pendingColor,
         opacity: settled ? 1 : 0.85,

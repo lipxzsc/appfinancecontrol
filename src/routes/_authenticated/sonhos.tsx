@@ -40,7 +40,7 @@ function SonhosPage() {
   const goalLocked = !plan.isPro && state.goals.length >= FREE_LIMITS.goals;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Sonhos & metas</h2>
@@ -56,7 +56,7 @@ function SonhosPage() {
       </div>
 
       {state.goals.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+        <div className="rounded-2xl border border-dashed border-border bg-card/35 p-8 text-center text-sm text-muted-foreground backdrop-blur-xl">
           Nenhum sonho ainda. Que tal começar com um?
         </div>
       )}
@@ -151,7 +151,7 @@ function GoalCard({
 
   return (
     <article
-      className="rounded-3xl p-5 border border-border/60 shadow-[var(--shadow-soft)] space-y-4"
+      className="rounded-2xl p-5 border border-border shadow-[var(--shadow-soft)] space-y-4 backdrop-blur-xl"
       style={{ background: "var(--gradient-card)" }}
     >
       <header className="flex items-start gap-3">
