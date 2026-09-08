@@ -69,8 +69,9 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen text-foreground">
-      <div className="mx-auto max-w-5xl px-4 pb-28 pt-4 sm:px-6 sm:pt-6">
-        <header className="mb-6 flex items-center gap-3 rounded-2xl border border-border bg-card/50 px-3 py-3 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:px-4">
+      <div className="mx-auto max-w-7xl px-4 pb-28 pt-4 sm:px-6 lg:px-8 lg:pt-6">
+        <header className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border pb-4 sm:flex">
+          <div className="flex min-w-0 items-center gap-3 sm:mr-auto">
           {signedIn ? (
             <Link
               to="/configuracoes"
@@ -87,12 +88,13 @@ export function AppLayout() {
           ) : (
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground"><WalletCards className="h-5 w-5" /></div>
           )}
-          <div className="flex-1 min-w-0">
-            <h1 className="font-display text-lg font-semibold leading-tight">FinControl</h1>
+          <div className="min-w-0">
+            <h1 className="truncate font-display text-lg font-semibold leading-tight">FinControl</h1>
             <p className="text-xs text-muted-foreground truncate">
               {displayName ? `Olá, ${displayName}` : "Receitas, sonhos e investimentos"}
             </p>
-          </div>
+          </div></div>
+          <div className="flex shrink-0 items-center gap-1">
           {signedIn && (
             plan.isPro ? <ProBadge daysLeft={plan.daysLeft} /> : <ProUpsellChip />
           )}
@@ -109,11 +111,11 @@ export function AppLayout() {
             <Button asChild size="sm" variant="outline" className="gap-1 rounded-full">
               <Link to="/auth"><UserIcon className="h-4 w-4" /> Entrar</Link>
             </Button>
-          )}
+          )}</div>
         </header>
         <Outlet />
       </div>
-      <nav className="fixed inset-x-3 bottom-3 z-40 mx-auto max-w-2xl rounded-2xl border border-border bg-card/90 shadow-2xl backdrop-blur-xl sm:bottom-5">
+      <nav className="fixed inset-x-3 bottom-3 z-40 mx-auto max-w-2xl rounded-lg border border-border bg-card/95 shadow-2xl backdrop-blur-xl sm:bottom-5">
         <div className="grid grid-cols-5 p-1">
           {NAV.map(({ to, label, Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
@@ -121,7 +123,7 @@ export function AppLayout() {
               <Link
                 key={to}
                 to={to}
-                className={`flex min-w-0 flex-col items-center gap-1 rounded-xl py-2.5 text-[10px] transition-all ${
+                className={`flex min-w-0 flex-col items-center gap-1 rounded-md py-2.5 text-[10px] transition-all ${
                    active ? "bg-primary/12 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 }`}
               >
