@@ -19,8 +19,8 @@
  */
 
 @theme inline {
-  --font-sans: "DM Sans", sans-serif;
-  --font-display: "Space Grotesk", sans-serif;
+  --font-sans: "Avenir Next", "Segoe UI", sans-serif;
+  --font-display: "Avenir Next", "Segoe UI", sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
