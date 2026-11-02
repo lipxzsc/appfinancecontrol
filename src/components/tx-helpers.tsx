@@ -210,8 +210,8 @@ export function AddTxDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-1">
-          <Plus className="h-4 w-4" /> Novo
+        <Button className="h-11 gap-2 px-5 shadow-[var(--shadow-soft)]">
+          <Plus className="h-4 w-4" /> Lançar receita ou gasto
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-sm" aria-describedby={undefined}>
