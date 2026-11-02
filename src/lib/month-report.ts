@@ -35,9 +35,18 @@ function groupByCategory(txs: Transaction[]) {
   }
   const toList = (m: Map<string, number>) =>
     Array.from(m.entries())
-      .map(([cat, total]) => ({ cat, label: labelForCategory(cat as never) || cat, total }))
+      .map(([cat, total]) => ({ cat, label: catName(cat), total }))
       .sort((a, b) => b.total - a.total);
   return { receitas: toList(receitas), despesas: toList(despesas) };
+}
+
+/** Nome legível da categoria, com fallback para categorias antigas. */
+function catName(cat?: string) {
+  if (!cat) return "-";
+  const l = labelForCategory(cat as never);
+  if (l) return l;
+  const s = cat.replace(/_/g, " ");
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 function triggerDownload(blob: Blob, filename: string) {
@@ -65,10 +74,13 @@ export function downloadMonthReportCSV({ year, month, totals, txs }: MonthReport
   lines.push("Resumo do mês");
   lines.push(["Indicador", "Valor (R$)"].join(sep));
   lines.push(["Sobra anterior", fmt(totals.carryOver)].join(sep));
-  lines.push(["Receitas", fmt(totals.receitasMes)].join(sep));
-  lines.push(["Despesas", fmt(totals.despesasMes)].join(sep));
+  lines.push(["Receitas recebidas", fmt(totals.receitasRecebidas)].join(sep));
+  lines.push(["Receitas a receber", fmt(totals.receitasPendentes)].join(sep));
+  lines.push(["Despesas pagas", fmt(totals.despesasPagas)].join(sep));
+  lines.push(["Despesas a pagar", fmt(totals.despesasPendentes)].join(sep));
   lines.push(["Rendimento estimado", fmt(totals.rendimentoEstimado)].join(sep));
-  lines.push(["Saldo final", fmt(totals.saldoFinal)].join(sep));
+  lines.push(["Saldo atual (realizado)", fmt(totals.saldoFinal)].join(sep));
+  lines.push(["Saldo previsto", fmt(totals.saldoFinal + totals.receitasPendentes - totals.despesasPendentes)].join(sep));
   lines.push("");
 
   const { receitas, despesas } = groupByCategory(txs);
@@ -82,13 +94,14 @@ export function downloadMonthReportCSV({ year, month, totals, txs }: MonthReport
   lines.push("");
 
   lines.push("Lançamentos detalhados");
-  lines.push(["Data", "Tipo", "Categoria", "Descrição", "Valor (R$)"].join(sep));
+  lines.push(["Data", "Tipo", "Categoria", "Descrição", "Status", "Valor (R$)"].join(sep));
   for (const t of txs) {
     lines.push([
       t.date,
       t.type === "receita" ? "Receita" : "Despesa",
-      csvEscape(labelForCategory(t.category) || "-"),
+      csvEscape(catName(t.category)),
       csvEscape(t.description || "-"),
+      t.settled === false ? (t.type === "receita" ? "A receber" : "A pagar") : t.type === "receita" ? "Recebido" : "Pago",
       fmt(t.amount),
     ].join(sep));
   }
@@ -97,157 +110,262 @@ export function downloadMonthReportCSV({ year, month, totals, txs }: MonthReport
   triggerDownload(blob, `${fileSlug(year, month)}.csv`);
 }
 
-/** PDF didático: cabeçalho, cards-resumo, tabelas por categoria e lista. */
-export function downloadMonthReportPDF({ year, month, totals, txs }: MonthReportInput) {
+/** PDF didático: saldos realizados x previstos, status de cada lançamento. */
+export function downloadMonthReportPDF(input: MonthReportInput) {
+  const doc = buildMonthReportPDF(input);
+  doc.save(`${fileSlug(input.year, input.month)}.pdf`);
+}
+
+type RGB = [number, number, number];
+const C = {
+  ink: [24, 32, 30] as RGB,
+  muted: [110, 120, 118] as RGB,
+  line: [228, 232, 230] as RGB,
+  soft: [246, 248, 247] as RGB,
+  dark: [12, 28, 24] as RGB,
+  mint: [92, 196, 150] as RGB,
+  mintSoft: [226, 245, 236] as RGB,
+  coral: [226, 112, 96] as RGB,
+  coralSoft: [252, 233, 229] as RGB,
+  amber: [214, 150, 50] as RGB,
+  amberSoft: [252, 243, 224] as RGB,
+  blueSoft: [230, 238, 250] as RGB,
+  blue: [90, 120, 190] as RGB,
+};
+
+/** Monta o documento (separado do download para facilitar testes). */
+export function buildMonthReportPDF({ year, month, totals, txs }: MonthReportInput) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  const margin = 40;
-  let y = margin;
-
-  doc.setFillColor(30, 30, 40);
-  doc.rect(0, 0, pageW, 80, "F");
-  doc.setTextColor(255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.text("FinControl", margin, 38);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(12);
-  doc.text(`Relatorio mensal - ${monthName(year, month)}`, margin, 58);
-  y = 110;
-
-  const cards: { label: string; value: string; rgb: [number, number, number] }[] = [
-    { label: "Sobra anterior", value: formatBRL(totals.carryOver), rgb: [200, 200, 220] },
-    { label: "Receitas", value: formatBRL(totals.receitasMes), rgb: [180, 220, 190] },
-    { label: "Despesas", value: formatBRL(totals.despesasMes), rgb: [240, 190, 190] },
-    { label: "Rendimento est.", value: formatBRL(totals.rendimentoEstimado), rgb: [200, 210, 240] },
-  ];
-  const cardW = (pageW - margin * 2 - 12 * 3) / 4;
-  const cardH = 60;
-  cards.forEach((c, i) => {
-    const x = margin + i * (cardW + 12);
-    doc.setFillColor(c.rgb[0], c.rgb[1], c.rgb[2]);
-    doc.roundedRect(x, y, cardW, cardH, 8, 8, "F");
-    doc.setTextColor(60);
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.text(c.label.toUpperCase(), x + 10, y + 18);
-    doc.setTextColor(20);
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text(c.value, x + 10, y + 42);
-  });
-  y += cardH + 18;
-
-  doc.setFillColor(245, 240, 220);
-  doc.roundedRect(margin, y, pageW - margin * 2, 50, 8, 8, "F");
-  doc.setTextColor(80);
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text("SALDO FINAL DO MES", margin + 14, y + 20);
-  doc.setTextColor(20);
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  doc.text(formatBRL(totals.saldoFinal), margin + 14, y + 40);
-  y += 70;
-
-  const ensureSpace = (need: number) => {
-    if (y + need > pageH - margin) {
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const M = 40;
+  const inner = W - M * 2;
+  let y = 0;
+  const fill = (c: RGB) => doc.setFillColor(c[0], c[1], c[2]);
+  const color = (c: RGB) => doc.setTextColor(c[0], c[1], c[2]);
+  const font = (style: "normal" | "bold", size: number) => {
+    doc.setFont("helvetica", style);
+    doc.setFontSize(size);
+  };
+  const ensure = (need: number) => {
+    if (y + need > H - 50) {
       doc.addPage();
-      y = margin;
+      y = M;
     }
   };
 
-  const sectionTitle = (title: string) => {
-    ensureSpace(28);
-    doc.setFillColor(240, 240, 245);
-    doc.roundedRect(margin, y, pageW - margin * 2, 22, 4, 4, "F");
-    doc.setTextColor(40);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text(title, margin + 10, y + 15);
-    y += 30;
-  };
+  // Saldos derivados: realizado (só liquidados) x previsto (se tudo for quitado).
+  const saldoPrevisto = totals.saldoFinal + totals.receitasPendentes - totals.despesasPendentes;
+  const resultadoMes = totals.receitasRecebidas - totals.despesasPagas;
 
-  const drawCategoryTable = (rows: { label: string; total: number }[], totalAll: number) => {
-    if (rows.length === 0) {
-      ensureSpace(20);
-      doc.setTextColor(120);
-      doc.setFont("helvetica", "italic");
-      doc.setFontSize(10);
-      doc.text("Nenhum lancamento.", margin + 4, y + 4);
-      y += 18;
+  // ---- Cabeçalho
+  fill(C.dark);
+  doc.rect(0, 0, W, 96, "F");
+  fill(C.mint);
+  doc.rect(0, 96, W, 4, "F");
+  color([255, 255, 255]);
+  font("bold", 22);
+  doc.text("FinControl", M, 44);
+  font("normal", 11);
+  color([190, 220, 205]);
+  const title = monthName(year, month);
+  doc.text(`Relatório mensal · ${title.charAt(0).toUpperCase() + title.slice(1)}`, M, 66);
+  font("normal", 9);
+  doc.text(`${txs.length} lançamentos`, W - M, 44, { align: "right" });
+  y = 124;
+
+  // ---- Saldo final em destaque
+  fill(C.mintSoft);
+  doc.roundedRect(M, y, inner, 78, 10, 10, "F");
+  color(C.muted);
+  font("bold", 8);
+  doc.text("SALDO ATUAL (JÁ DESCONTADO O QUE FOI PAGO)", M + 16, y + 22);
+  color(totals.saldoFinal >= 0 ? C.ink : C.coral);
+  font("bold", 24);
+  doc.text(formatBRL(totals.saldoFinal), M + 16, y + 54);
+  color(C.muted);
+  font("bold", 8);
+  doc.text("SALDO PREVISTO NO FIM DO MÊS", W - M - 16, y + 22, { align: "right" });
+  color(C.ink);
+  font("bold", 14);
+  doc.text(formatBRL(saldoPrevisto), W - M - 16, y + 46, { align: "right" });
+  font("normal", 8);
+  color(C.muted);
+  doc.text("se todas as pendências forem quitadas", W - M - 16, y + 60, { align: "right" });
+  y += 94;
+
+  // ---- Cards: receitas e despesas (realizado + pendente)
+  const cardW = (inner - 12) / 2;
+  const flowCard = (x: number, label: string, done: number, pending: number, doneLbl: string, pendLbl: string, bg: RGB, accent: RGB) => {
+    fill(bg);
+    doc.roundedRect(x, y, cardW, 88, 10, 10, "F");
+    fill(accent);
+    doc.roundedRect(x, y, 5, 88, 2, 2, "F");
+    color(C.muted);
+    font("bold", 8);
+    doc.text(label, x + 16, y + 20);
+    color(C.ink);
+    font("bold", 16);
+    doc.text(formatBRL(done + pending), x + 16, y + 42);
+    font("normal", 9);
+    color(accent);
+    doc.text(`${doneLbl}: ${formatBRL(done)}`, x + 16, y + 62);
+    color(C.amber);
+    doc.text(`${pendLbl}: ${formatBRL(pending)}`, x + 16, y + 77);
+  };
+  flowCard(M, "RECEITAS DO MÊS", totals.receitasRecebidas, totals.receitasPendentes, "Recebido", "A receber", C.mintSoft, C.mint);
+  flowCard(M + cardW + 12, "DESPESAS DO MÊS", totals.despesasPagas, totals.despesasPendentes, "Pago", "A pagar", C.coralSoft, C.coral);
+  y += 116;
+
+  // ---- Como o saldo foi calculado (passo a passo)
+  font("bold", 12);
+  color(C.ink);
+  doc.text("Como chegamos ao saldo", M, y);
+  y += 12;
+  const steps: { label: string; value: number; sign: string; c: RGB }[] = [
+    { label: "Sobra do mês anterior", value: totals.carryOver, sign: "", c: C.ink },
+    { label: "Receitas já recebidas", value: totals.receitasRecebidas, sign: "+", c: C.mint },
+    { label: "Rendimento estimado dos investimentos", value: totals.rendimentoEstimado, sign: "+", c: C.blue },
+    { label: "Despesas já pagas", value: totals.despesasPagas, sign: "-", c: C.coral },
+  ];
+  fill(C.soft);
+  doc.roundedRect(M, y, inner, steps.length * 22 + 34, 8, 8, "F");
+  y += 18;
+  for (const s of steps) {
+    font("normal", 10);
+    color(C.ink);
+    doc.text(s.label, M + 16, y);
+    font("bold", 10);
+    color(s.c);
+    doc.text(`${s.sign} ${formatBRL(s.value)}`.trim(), W - M - 16, y, { align: "right" });
+    y += 22;
+  }
+  doc.setDrawColor(C.line[0], C.line[1], C.line[2]);
+  doc.line(M + 16, y - 12, W - M - 16, y - 12);
+  font("bold", 11);
+  color(C.ink);
+  doc.text("= Saldo atual", M + 16, y + 4);
+  doc.text(formatBRL(totals.saldoFinal), W - M - 16, y + 4, { align: "right" });
+  y += 26;
+  font("normal", 9);
+  color(C.muted);
+  doc.text(
+    `Resultado do mês (recebido - pago): ${formatBRL(resultadoMes)}. Pendências não afetam o saldo até serem marcadas como pagas/recebidas.`,
+    M,
+    y,
+    { maxWidth: inner },
+  );
+  y += 30;
+
+  // ---- Tabelas por categoria
+  const sectionTitle = (t: string) => {
+    ensure(40);
+    font("bold", 12);
+    color(C.ink);
+    doc.text(t, M, y);
+    y += 14;
+  };
+  const categoryBars = (rows: { label: string; total: number }[], totalAll: number, accent: RGB) => {
+    if (!rows.length) {
+      font("normal", 10);
+      color(C.muted);
+      doc.text("Nenhum lançamento.", M, y + 6);
+      y += 24;
       return;
     }
-    doc.setFontSize(10);
     for (const r of rows) {
-      ensureSpace(20);
-      const pct = totalAll > 0 ? Math.round((r.total / totalAll) * 100) : 0;
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(40);
-      doc.text(r.label, margin + 4, y + 10);
-      doc.text(`${pct}%`, pageW - margin - 110, y + 10, { align: "right" });
-      doc.setFont("helvetica", "bold");
-      doc.text(formatBRL(r.total), pageW - margin - 4, y + 10, { align: "right" });
+      ensure(26);
+      const pct = totalAll > 0 ? (r.total / totalAll) * 100 : 0;
+      font("normal", 10);
+      color(C.ink);
+      doc.text(r.label, M, y + 8);
+      color(C.muted);
+      doc.text(`${Math.round(pct)}%`, W - M - 100, y + 8, { align: "right" });
+      font("bold", 10);
+      color(C.ink);
+      doc.text(formatBRL(r.total), W - M, y + 8, { align: "right" });
+      y += 13;
+      fill(C.line);
+      doc.roundedRect(M, y, inner, 5, 2.5, 2.5, "F");
+      fill(accent);
+      if (pct > 0) doc.roundedRect(M, y, Math.max(5, (inner * pct) / 100), 5, 2.5, 2.5, "F");
       y += 14;
-      doc.setFillColor(230, 230, 235);
-      doc.roundedRect(margin + 4, y, pageW - margin * 2 - 8, 4, 2, 2, "F");
-      doc.setFillColor(120, 140, 200);
-      doc.roundedRect(margin + 4, y, ((pageW - margin * 2 - 8) * pct) / 100, 4, 2, 2, "F");
-      y += 10;
     }
-    y += 6;
+    y += 8;
   };
-
   const { receitas, despesas } = groupByCategory(txs);
   sectionTitle("Receitas por categoria");
-  drawCategoryTable(receitas, totals.receitasMes);
+  categoryBars(receitas, totals.receitasMes, C.mint);
   sectionTitle("Despesas por categoria");
-  drawCategoryTable(despesas, totals.despesasMes);
+  categoryBars(despesas, totals.despesasMes, C.coral);
 
-  sectionTitle(`Lancamentos detalhados (${txs.length})`);
-  doc.setFontSize(9);
-  doc.setTextColor(120);
-  doc.text("Data", margin + 4, y);
-  doc.text("Categoria", margin + 70, y);
-  doc.text("Descricao", margin + 180, y);
-  doc.text("Valor", pageW - margin - 4, y, { align: "right" });
-  y += 4;
-  doc.setDrawColor(220);
-  doc.line(margin, y, pageW - margin, y);
-  y += 12;
-
-  for (const t of txs) {
-    ensureSpace(16);
-    const sign = t.type === "receita" ? "+" : "-";
-    const color: [number, number, number] = t.type === "receita" ? [50, 130, 80] : [180, 60, 60];
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(60);
-    doc.text(t.date, margin + 4, y);
-    doc.text(labelForCategory(t.category) || "-", margin + 70, y);
-    const desc = (t.description || "-").slice(0, 38);
-    doc.text(desc, margin + 180, y);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(color[0], color[1], color[2]);
-    doc.text(`${sign}${formatBRL(t.amount)}`, pageW - margin - 4, y, { align: "right" });
-    y += 16;
+  // ---- Lançamentos detalhados com status
+  sectionTitle("Lançamentos detalhados");
+  const cols = { date: M + 8, cat: M + 70, desc: M + 170, status: M + 340, value: W - M - 8 };
+  const header = () => {
+    fill(C.dark);
+    doc.roundedRect(M, y, inner, 20, 4, 4, "F");
+    font("bold", 8);
+    color([255, 255, 255]);
+    doc.text("DATA", cols.date, y + 13);
+    doc.text("CATEGORIA", cols.cat, y + 13);
+    doc.text("DESCRIÇÃO", cols.desc, y + 13);
+    doc.text("STATUS", cols.status, y + 13);
+    doc.text("VALOR", cols.value, y + 13, { align: "right" });
+    y += 24;
+  };
+  ensure(50);
+  header();
+  const sorted = [...txs].sort((a, b) => a.date.localeCompare(b.date));
+  sorted.forEach((t, i) => {
+    if (y + 20 > H - 50) {
+      doc.addPage();
+      y = M;
+      header();
+    }
+    if (i % 2 === 0) {
+      fill(C.soft);
+      doc.rect(M, y - 2, inner, 20, "F");
+    }
+    const isRec = t.type === "receita";
+    const settled = t.settled !== false;
+    const [yy, mm, dd] = t.date.split("-");
+    font("normal", 9);
+    color(C.ink);
+    doc.text(`${dd}/${mm}/${yy}`, cols.date, y + 11);
+    doc.text(catName(t.category).slice(0, 18), cols.cat, y + 11);
+    color(C.muted);
+    doc.text((t.description || "-").slice(0, 30), cols.desc, y + 11);
+    // Selo de status
+    const label = settled ? (isRec ? "Recebido" : "Pago") : isRec ? "A receber" : "A pagar";
+    fill(settled ? (isRec ? C.mintSoft : C.coralSoft) : C.amberSoft);
+    doc.roundedRect(cols.status - 4, y + 1, 58, 14, 7, 7, "F");
+    font("bold", 7.5);
+    color(settled ? (isRec ? C.mint : C.coral) : C.amber);
+    doc.text(label, cols.status + 25, y + 11, { align: "center" });
+    font("bold", 9);
+    color(isRec ? C.mint : C.coral);
+    doc.text(`${isRec ? "+" : "-"} ${formatBRL(t.amount)}`, cols.value, y + 11, { align: "right" });
+    y += 20;
+  });
+  if (!sorted.length) {
+    font("normal", 10);
+    color(C.muted);
+    doc.text("Nenhum lançamento neste mês.", M + 8, y + 8);
   }
 
+  // ---- Rodapé
   const total = doc.getNumberOfPages();
   for (let p = 1; p <= total; p++) {
     doc.setPage(p);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(140);
-    doc.text(
-      `Gerado pelo FinControl - ${new Date().toLocaleString("pt-BR")}  -  Pagina ${p}/${total}`,
-      pageW / 2,
-      pageH - 18,
-      { align: "center" },
-    );
+    doc.setDrawColor(C.line[0], C.line[1], C.line[2]);
+    doc.line(M, H - 34, W - M, H - 34);
+    font("normal", 8);
+    color(C.muted);
+    doc.text(`Gerado pelo FinControl em ${new Date().toLocaleString("pt-BR")}`, M, H - 20);
+    doc.text(`Página ${p} de ${total}`, W - M, H - 20, { align: "right" });
   }
-
-  doc.save(`${fileSlug(year, month)}.pdf`);
+  return doc;
 }
 
 export const _categoryRefs = [...RECEITA_CATEGORIES, ...DESPESA_CATEGORIES];
