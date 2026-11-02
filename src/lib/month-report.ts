@@ -35,9 +35,18 @@ function groupByCategory(txs: Transaction[]) {
   }
   const toList = (m: Map<string, number>) =>
     Array.from(m.entries())
-      .map(([cat, total]) => ({ cat, label: labelForCategory(cat as never) || cat, total }))
+      .map(([cat, total]) => ({ cat, label: catName(cat), total }))
       .sort((a, b) => b.total - a.total);
   return { receitas: toList(receitas), despesas: toList(despesas) };
+}
+
+/** Nome legível da categoria, com fallback para categorias antigas. */
+function catName(cat?: string) {
+  if (!cat) return "-";
+  const l = labelForCategory(cat as never);
+  if (l) return l;
+  const s = cat.replace(/_/g, " ");
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 function triggerDownload(blob: Blob, filename: string) {
@@ -90,7 +99,7 @@ export function downloadMonthReportCSV({ year, month, totals, txs }: MonthReport
     lines.push([
       t.date,
       t.type === "receita" ? "Receita" : "Despesa",
-      csvEscape(labelForCategory(t.category) || "-"),
+      csvEscape(catName(t.category)),
       csvEscape(t.description || "-"),
       t.settled === false ? (t.type === "receita" ? "A receber" : "A pagar") : t.type === "receita" ? "Recebido" : "Pago",
       fmt(t.amount),
@@ -206,7 +215,7 @@ export function buildMonthReportPDF({ year, month, totals, txs }: MonthReportInp
   };
   flowCard(M, "RECEITAS DO MÊS", totals.receitasRecebidas, totals.receitasPendentes, "Recebido", "A receber", C.mintSoft, C.mint);
   flowCard(M + cardW + 12, "DESPESAS DO MÊS", totals.despesasPagas, totals.despesasPendentes, "Pago", "A pagar", C.coralSoft, C.coral);
-  y += 104;
+  y += 116;
 
   // ---- Como o saldo foi calculado (passo a passo)
   font("bold", 12);
@@ -324,7 +333,7 @@ export function buildMonthReportPDF({ year, month, totals, txs }: MonthReportInp
     font("normal", 9);
     color(C.ink);
     doc.text(`${dd}/${mm}/${yy}`, cols.date, y + 11);
-    doc.text((labelForCategory(t.category) || "-").slice(0, 18), cols.cat, y + 11);
+    doc.text(catName(t.category).slice(0, 18), cols.cat, y + 11);
     color(C.muted);
     doc.text((t.description || "-").slice(0, 30), cols.desc, y + 11);
     // Selo de status
