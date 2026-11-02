@@ -9,7 +9,6 @@ import {
   FileText,
   Landmark,
   Lock,
-  Plus,
   Sparkles,
   TrendingUp,
   Wallet,
@@ -124,6 +123,17 @@ function Overview() {
 
       <MonthCarousel year={year} month={month} onChange={(nextYear, nextMonth) => { setYear(nextYear); setMonth(nextMonth); }} />
 
+      <section className="flex flex-wrap items-center gap-3 border-y border-primary/20 py-4">
+        <AddTxDialog
+          year={year}
+          month={month}
+          onAdd={(transaction) => update((current) => ({ ...current, transactions: [...current.transactions, transaction] }))}
+          lockedReason={txLocked ? `Limite ${FREE_LIMITS.transactionsPerMonth}/mês` : undefined}
+        />
+        <Button asChild variant="ghost" size="sm"><Link to="/transacoes">Ver transações <ArrowUpRight className="h-4 w-4" /></Link></Button>
+        {!plan.isPro && <p className="text-xs text-muted-foreground sm:ml-auto">{monthTxs.length}/{FREE_LIMITS.transactionsPerMonth} lançamentos no mês</p>}
+      </section>
+
       <section className="grid gap-4 lg:grid-cols-12">
         <div className="min-w-0 border-b border-border pb-5 lg:col-span-8 lg:border-b-0 lg:pb-0">
           <p className="flex items-center gap-2 text-[10px] font-bold uppercase text-muted-foreground">
@@ -228,22 +238,6 @@ function Overview() {
         <MiniMetric label="Despesas pagas" value={mask(formatBRL(totals.despesasPagas))} Icon={ArrowDownRight} tone="accent" />
         <MiniMetric label="Saldo disponível" value={mask(formatBRL(totals.saldoFinal))} Icon={Wallet} tone="foreground" />
       </div>
-
-      <section className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-        <div className="min-w-0">
-          <h3 className="font-display text-sm font-semibold">Movimentar este mês</h3>
-          <p className="mt-1 text-xs text-muted-foreground">{plan.isPro ? "Registre uma receita ou despesa" : `${monthTxs.length}/${FREE_LIMITS.transactionsPerMonth} lançamentos usados no plano Free`}</p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button asChild variant="outline" size="sm"><Link to="/transacoes">Ver extrato</Link></Button>
-          <AddTxDialog
-            year={year}
-            month={month}
-            onAdd={(transaction) => update((current) => ({ ...current, transactions: [...current.transactions, transaction] }))}
-            lockedReason={txLocked ? `Limite ${FREE_LIMITS.transactionsPerMonth}/mês` : undefined}
-          />
-        </div>
-      </section>
 
       <InitialBalanceCard value={state.initialBalance} onChange={(value) => update((current) => ({ ...current, initialBalance: value }))} />
       <MonthReport canUse={plan.isPro} year={year} month={month} totals={totals} txs={monthTxs} state={state} />
