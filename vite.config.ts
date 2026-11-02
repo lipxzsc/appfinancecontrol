@@ -25,7 +25,6 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
-  nitro: {
-    preset: "netlify",
-  },
+  // Netlify sets NETLIFY=true during its builds; everywhere else keep the default target.
+  ...(process.env.NETLIFY ? { nitro: { preset: "netlify" } } : {}),
 });
