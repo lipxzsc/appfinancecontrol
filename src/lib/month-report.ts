@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { computeReportBalances } from "@/lib/report-balances";
 import { formatBRL, type Transaction, type FinanceState, computeMonthBalances } from "@/lib/finance-store";
 import { RECEITA_CATEGORIES, DESPESA_CATEGORIES, labelForCategory } from "@/components/tx-helpers";
 
@@ -65,8 +66,9 @@ function csvEscape(v: string | number) {
 }
 
 /** CSV pronto pra abrir no Excel pt-BR (separador `;`, vírgula decimal). */
-export function downloadMonthReportCSV({ year, month, totals, txs }: MonthReportInput) {
+export function downloadMonthReportCSV({ year, month, totals, txs, state }: MonthReportInput) {
   const sep = ";";
+  const { saldoInvestimentos, saldoTotalComInvestimentos } = computeReportBalances(state, totals);
   const fmt = (n: number) => n.toFixed(2).replace(".", ",");
   const lines: string[] = [];
   lines.push(`FinControl - Relatório de ${monthName(year, month)}`);
@@ -80,6 +82,8 @@ export function downloadMonthReportCSV({ year, month, totals, txs }: MonthReport
   lines.push(["Despesas a pagar", fmt(totals.despesasPendentes)].join(sep));
   lines.push(["Rendimento estimado", fmt(totals.rendimentoEstimado)].join(sep));
   lines.push(["Saldo atual (realizado)", fmt(totals.saldoFinal)].join(sep));
+  lines.push(["Saldo dos investimentos", fmt(saldoInvestimentos)].join(sep));
+  lines.push(["Saldo total contando com os investimentos", fmt(saldoTotalComInvestimentos)].join(sep));
   lines.push(["Saldo previsto", fmt(totals.saldoFinal + totals.receitasPendentes - totals.despesasPendentes)].join(sep));
   lines.push("");
 
@@ -134,7 +138,7 @@ const C = {
 };
 
 /** Monta o documento (separado do download para facilitar testes). */
-export function buildMonthReportPDF({ year, month, totals, txs }: MonthReportInput) {
+export function buildMonthReportPDF({ year, month, totals, txs, state }: MonthReportInput) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
@@ -157,6 +161,7 @@ export function buildMonthReportPDF({ year, month, totals, txs }: MonthReportInp
   // Saldos derivados: realizado (só liquidados) x previsto (se tudo for quitado).
   const saldoPrevisto = totals.saldoFinal + totals.receitasPendentes - totals.despesasPendentes;
   const resultadoMes = totals.receitasRecebidas - totals.despesasPagas;
+  const { saldoInvestimentos, saldoTotalComInvestimentos } = computeReportBalances(state, totals);
 
   // ---- Cabeçalho
   fill(C.dark);
@@ -194,6 +199,26 @@ export function buildMonthReportPDF({ year, month, totals, txs }: MonthReportInp
   doc.text("se todas as pendências forem quitadas", W - M - 16, y + 60, { align: "right" });
   y += 94;
 
+  // ---- Patrimônio: saldo das operações + principal investido, sem duplicar rendimentos.
+  fill(C.blueSoft);
+  doc.roundedRect(M, y, inner, 100, 8, 8, "F");
+  color(C.muted);
+  font("normal", 10);
+  doc.text("Saldo dos investimentos", M + 16, y + 22);
+  color(C.blue);
+  font("bold", 12);
+  doc.text(formatBRL(saldoInvestimentos), W - M - 16, y + 22, { align: "right" });
+  color(C.ink);
+  font("bold", 10);
+  doc.text("Saldo total contando com os investimentos", M + 16, y + 45);
+  font("bold", 22);
+  color(saldoTotalComInvestimentos >= 0 ? C.ink : C.coral);
+  doc.text(formatBRL(saldoTotalComInvestimentos), M + 16, y + 71);
+  font("normal", 8);
+  color(C.muted);
+  doc.text("Saldo atual + valores investidos registrados. Pendências não incluídas.", M + 16, y + 88);
+  y += 116;
+
   // ---- Cards: receitas e despesas (realizado + pendente)
   const cardW = (inner - 12) / 2;
   const flowCard = (x: number, label: string, done: number, pending: number, doneLbl: string, pendLbl: string, bg: RGB, accent: RGB) => {
@@ -218,6 +243,7 @@ export function buildMonthReportPDF({ year, month, totals, txs }: MonthReportInp
   y += 116;
 
   // ---- Como o saldo foi calculado (passo a passo)
+  ensure(210);
   font("bold", 12);
   color(C.ink);
   doc.text("Como chegamos ao saldo", M, y);
