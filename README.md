@@ -78,3 +78,7 @@ npm install
 
 # Inicie a aplicação
 npm run dev
+```
+
+👨‍💻 **Desenvolvido por [Luis Felipe Fontana Silva](https://lipeportfolio.lovable.app/)**  
+Conecte-se comigo no [LinkedIn](https://www.linkedin.com/in/lipefontana).
