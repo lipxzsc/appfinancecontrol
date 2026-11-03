@@ -1,6 +1,10 @@
-# Sistema de Controle Financeiro Inteligente
+# 💰 Finan Pro - Sistema de Controle Financeiro Inteligente
 
-Um aplicativo responsivo, didático e intuitivo, desenvolvido com foco na solução de problemas financeiros através de tecnologia low-code, utilizando IA para insights e automações.
+> Um aplicativo responsivo, didático e intuitivo, desenvolvido com foco na solução de problemas financeiros através de tecnologia Low-Code/Vibe Coding, utilizando IA para insights e automações.
+
+🔗 **Acesse a aplicação rodando ao vivo:** [https://finanproai.netlify.app](https://finanproai.netlify.app/)
+
+---
 
 ## 🚀 Sobre o Projeto
 Este aplicativo foi projetado para simplificar a gestão financeira pessoal, oferecendo uma experiência "humanizada" desde o login até a análise avançada de gastos. Com uma arquitetura limpa (Clean Code), o sistema combina facilidade de uso com alta capacidade analítica.
@@ -38,6 +42,8 @@ Este aplicativo foi projetado para simplificar a gestão financeira pessoal, ofe
 *   **Relatórios em PDF:** Geração de documentos prontos para visualização e impressão.
 *   **Exportação em CSV:** Facilidade para manipulação de dados em planilhas externas.
 
+---
+
 ## 📦 Planos (Free vs. Premium)
 
 | Funcionalidade | Free | Premium |
@@ -51,5 +57,24 @@ Este aplicativo foi projetado para simplificar a gestão financeira pessoal, ofe
 ---
 
 ## 🛠️ Tecnologias e Clean Code
-*   **Low-Code:** Desenvolvimento ágil focado na solução de problemas.
+*   **Tecnologias Base:** React, TypeScript, Tailwind CSS, Lucide Icons, Shadcn/UI
+*   **Low-Code & IA:** Desenvolvimento ágil e integração de inteligência sintética para prototipagem e solução de problemas.
 *   **Clean Code:** Estrutura de código modular, comentada para fácil manutenção e compreensão, separando claramente a lógica de negócios da interface.
+*   **Deploy:** Hospedado via Netlify.
+
+---
+
+## 💻 Executando o Projeto Localmente
+
+```bash
+# Clone o repositório
+git clone [https://github.com/lipxzsc/appfinancecontrol.git](https://github.com/lipxzsc/appfinancecontrol.git)
+
+# Entre na pasta do projeto
+cd appfinancecontrol
+
+# Instale as dependências
+npm install
+
+# Inicie a aplicação
+npm run dev
