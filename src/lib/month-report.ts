@@ -68,7 +68,7 @@ function csvEscape(v: string | number) {
 /** CSV pronto pra abrir no Excel pt-BR (separador `;`, vírgula decimal). */
 export function downloadMonthReportCSV({ year, month, totals, txs, state }: MonthReportInput) {
   const sep = ";";
-  const { saldoInvestimentos, saldoTotalComInvestimentos } = computeReportBalances(state, totals);
+  const { saldoOperacoes, saldoInvestimentos, saldoTotalComInvestimentos, saldoPrevisto, saldoPrevistoTotal } = computeReportBalances(state, totals);
   const fmt = (n: number) => n.toFixed(2).replace(".", ",");
   const lines: string[] = [];
   lines.push(`FinControl - Relatório de ${monthName(year, month)}`);
@@ -81,10 +81,17 @@ export function downloadMonthReportCSV({ year, month, totals, txs, state }: Mont
   lines.push(["Despesas pagas", fmt(totals.despesasPagas)].join(sep));
   lines.push(["Despesas a pagar", fmt(totals.despesasPendentes)].join(sep));
   lines.push(["Rendimento estimado", fmt(totals.rendimentoEstimado)].join(sep));
-  lines.push(["Saldo atual (realizado)", fmt(totals.saldoFinal)].join(sep));
+  lines.push(["Saldo das operações (recebido menos pago, sem lucro estimado)", fmt(saldoOperacoes)].join(sep));
+  lines.push(["Saldo das operações com lucro estimado", fmt(totals.saldoFinal)].join(sep));
   lines.push(["Saldo dos investimentos", fmt(saldoInvestimentos)].join(sep));
   lines.push(["Saldo total contando com os investimentos", fmt(saldoTotalComInvestimentos)].join(sep));
-  lines.push(["Saldo previsto", fmt(totals.saldoFinal + totals.receitasPendentes - totals.despesasPendentes)].join(sep));
+  lines.push(["Saldo previsto das operações (sem valor investido)", fmt(saldoPrevisto)].join(sep));
+  lines.push(["Saldo previsto total final do mês contando com investimentos e lucros", fmt(saldoPrevistoTotal)].join(sep));
+  lines.push("");
+  lines.push("Entenda a previsão total");
+  lines.push("Saldo das operações + saldo dos investimentos + lucro estimado + receitas a receber - despesas a pagar.");
+  lines.push("Lucro estimado não é garantido nem necessariamente disponível para saque. É contabilizado uma única vez.");
+  lines.push("A previsão considera todas as pendências quitadas e os valores investidos atualmente registrados, não um histórico da carteira.");
   lines.push("");
 
   const { receitas, despesas } = groupByCategory(txs);
@@ -159,9 +166,8 @@ export function buildMonthReportPDF({ year, month, totals, txs, state }: MonthRe
   };
 
   // Saldos derivados: realizado (só liquidados) x previsto (se tudo for quitado).
-  const saldoPrevisto = totals.saldoFinal + totals.receitasPendentes - totals.despesasPendentes;
   const resultadoMes = totals.receitasRecebidas - totals.despesasPagas;
-  const { saldoInvestimentos, saldoTotalComInvestimentos } = computeReportBalances(state, totals);
+  const { saldoOperacoes, saldoInvestimentos, saldoTotalComInvestimentos, saldoPrevisto, saldoPrevistoTotal } = computeReportBalances(state, totals);
 
   // ---- Cabeçalho
   fill(C.dark);
@@ -179,24 +185,43 @@ export function buildMonthReportPDF({ year, month, totals, txs, state }: MonthRe
   doc.text(`${txs.length} lançamentos`, W - M, 44, { align: "right" });
   y = 124;
 
+  // ---- Previsão completa em destaque; não confundir patrimônio com dinheiro disponível.
+  fill(C.blueSoft);
+  doc.roundedRect(M, y, inner, 112, 8, 8, "F");
+  color(C.blue);
+  font("bold", 11);
+  doc.text("Saldo previsto total final do mês", M + 16, y + 23);
+  font("normal", 10);
+  doc.text("contando com investimentos e lucros", M + 16, y + 39);
+  color(saldoPrevistoTotal >= 0 ? C.ink : C.coral);
+  font("bold", 28);
+  doc.text(formatBRL(saldoPrevistoTotal), M + 16, y + 72);
+  font("normal", 9);
+  color(C.muted);
+  doc.text("Inclui valores investidos, lucro estimado e pendências quitadas.", M + 16, y + 94);
+  y += 128;
+
   // ---- Saldo final em destaque
   fill(C.mintSoft);
   doc.roundedRect(M, y, inner, 78, 10, 10, "F");
   color(C.muted);
   font("bold", 8);
-  doc.text("SALDO ATUAL (JÁ DESCONTADO O QUE FOI PAGO)", M + 16, y + 22);
-  color(totals.saldoFinal >= 0 ? C.ink : C.coral);
+  doc.text("SALDO DAS OPERAÇÕES", M + 16, y + 22);
+  color(saldoOperacoes >= 0 ? C.ink : C.coral);
   font("bold", 24);
-  doc.text(formatBRL(totals.saldoFinal), M + 16, y + 54);
+  doc.text(formatBRL(saldoOperacoes), M + 16, y + 50);
+  font("normal", 8);
+  color(C.muted);
+  doc.text("Recebido menos pago; sem lucro estimado", M + 16, y + 66);
   color(C.muted);
   font("bold", 8);
-  doc.text("SALDO PREVISTO NO FIM DO MÊS", W - M - 16, y + 22, { align: "right" });
+  doc.text("PREVISÃO DAS OPERAÇÕES", W - M - 16, y + 22, { align: "right" });
   color(C.ink);
   font("bold", 14);
   doc.text(formatBRL(saldoPrevisto), W - M - 16, y + 46, { align: "right" });
   font("normal", 8);
   color(C.muted);
-  doc.text("se todas as pendências forem quitadas", W - M - 16, y + 60, { align: "right" });
+  doc.text("Com lucro estimado; sem o valor investido", W - M - 16, y + 66, { align: "right" });
   y += 94;
 
   // ---- Patrimônio: saldo das operações + principal investido, sem duplicar rendimentos.
@@ -216,7 +241,7 @@ export function buildMonthReportPDF({ year, month, totals, txs, state }: MonthRe
   doc.text(formatBRL(saldoTotalComInvestimentos), M + 16, y + 71);
   font("normal", 8);
   color(C.muted);
-  doc.text("Saldo atual + valores investidos registrados. Pendências não incluídas.", M + 16, y + 88);
+  doc.text("Inclui o lucro estimado uma vez; ainda não considera as pendências.", M + 16, y + 88);
   y += 116;
 
   // ---- Cards: receitas e despesas (realizado + pendente)
@@ -243,16 +268,19 @@ export function buildMonthReportPDF({ year, month, totals, txs, state }: MonthRe
   y += 116;
 
   // ---- Como o saldo foi calculado (passo a passo)
-  ensure(210);
+  ensure(310);
   font("bold", 12);
   color(C.ink);
-  doc.text("Como chegamos ao saldo", M, y);
+  doc.text("Passo a passo da previsão total", M, y);
   y += 12;
   const steps: { label: string; value: number; sign: string; c: RGB }[] = [
     { label: "Sobra do mês anterior", value: totals.carryOver, sign: "", c: C.ink },
     { label: "Receitas já recebidas", value: totals.receitasRecebidas, sign: "+", c: C.mint },
-    { label: "Rendimento estimado dos investimentos", value: totals.rendimentoEstimado, sign: "+", c: C.blue },
     { label: "Despesas já pagas", value: totals.despesasPagas, sign: "-", c: C.coral },
+    { label: "Saldo dos investimentos (valor registrado)", value: saldoInvestimentos, sign: "+", c: C.blue },
+    { label: "Lucro estimado dos investimentos no mês", value: totals.rendimentoEstimado, sign: "+", c: C.blue },
+    { label: "Receitas ainda a receber", value: totals.receitasPendentes, sign: "+", c: C.mint },
+    { label: "Despesas ainda a pagar", value: totals.despesasPendentes, sign: "-", c: C.coral },
   ];
   fill(C.soft);
   doc.roundedRect(M, y, inner, steps.length * 22 + 34, 8, 8, "F");
@@ -270,18 +298,22 @@ export function buildMonthReportPDF({ year, month, totals, txs, state }: MonthRe
   doc.line(M + 16, y - 12, W - M - 16, y - 12);
   font("bold", 11);
   color(C.ink);
-  doc.text("= Saldo atual", M + 16, y + 4);
-  doc.text(formatBRL(totals.saldoFinal), W - M - 16, y + 4, { align: "right" });
+  doc.text("= Saldo previsto total no fim do mês", M + 16, y + 4);
+  doc.text(formatBRL(saldoPrevistoTotal), W - M - 16, y + 4, { align: "right" });
   y += 26;
   font("normal", 9);
   color(C.muted);
   doc.text(
-    `Resultado do mês (recebido - pago): ${formatBRL(resultadoMes)}. Pendências não afetam o saldo até serem marcadas como pagas/recebidas.`,
+    `Resultado das operações no mês: ${formatBRL(resultadoMes)} (recebido menos pago). Pendências entram apenas na previsão; não alteram o saldo das operações.`,
     M,
     y,
     { maxWidth: inner },
   );
+  y += 34;
+  doc.text("Lucro estimado não é garantido e pode não estar disponível para saque. O valor é somado apenas uma vez.", M, y, { maxWidth: inner });
   y += 30;
+  doc.text("Investimentos: valores atualmente registrados, não uma posição histórica da carteira no mês selecionado.", M, y, { maxWidth: inner });
+  y += 34;
 
   // ---- Tabelas por categoria
   const sectionTitle = (t: string) => {
@@ -320,6 +352,11 @@ export function buildMonthReportPDF({ year, month, totals, txs, state }: MonthRe
     y += 8;
   };
   const { receitas, despesas } = groupByCategory(txs);
+  ensure(60);
+  font("normal", 9);
+  color(C.muted);
+  doc.text("Categorias abaixo incluem lançamentos quitados e pendentes.", M, y);
+  y += 20;
   sectionTitle("Receitas por categoria");
   categoryBars(receitas, totals.receitasMes, C.mint);
   sectionTitle("Despesas por categoria");
