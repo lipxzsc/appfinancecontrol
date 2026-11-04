@@ -75,6 +75,7 @@ const defaultState: FinanceState = {
 let memory: FinanceState | null = null;
 let currentUserId: string | null = null;
 let cloudLoaded = false;
+let hydrationVersion = 0;
 const listeners = new Set<() => void>();
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -95,7 +96,7 @@ function load(): FinanceState {
 }
 
 function persistCloudDebounced(next: FinanceState) {
-  if (!currentUserId) return;
+  if (!currentUserId || !cloudLoaded) return;
   if (saveTimer) clearTimeout(saveTimer);
   const uid = currentUserId;
   saveTimer = setTimeout(() => {
@@ -109,6 +110,7 @@ function persistCloudDebounced(next: FinanceState) {
 }
 
 function save(next: FinanceState) {
+  if (currentUserId && !cloudLoaded) return;
   memory = next;
   if (typeof window !== "undefined") {
     window.localStorage.setItem(storageKey(), JSON.stringify(next));
@@ -118,6 +120,7 @@ function save(next: FinanceState) {
 }
 
 async function hydrateFromCloud(userId: string) {
+  const version = ++hydrationVersion;
   currentUserId = userId;
   cloudLoaded = false;
   memory = null; // force per-user reload
@@ -126,8 +129,11 @@ async function hydrateFromCloud(userId: string) {
     .select("data")
     .eq("user_id", userId)
     .maybeSingle();
+  if (version !== hydrationVersion || currentUserId !== userId) return;
   if (error) {
+    // Never seed after a failed read: it could overwrite existing financial data.
     console.error("[finance] cloud load failed", error.message);
+    return;
   }
   if (data?.data) {
     memory = { ...defaultState, ...(data.data as Partial<FinanceState>) };
@@ -137,11 +143,16 @@ async function hydrateFromCloud(userId: string) {
   } else {
     // first-time user: seed cloud with whatever exists locally (or empty)
     const initial = load();
-    await supabase.from("finance_data").upsert({
+    const { error: seedError } = await supabase.from("finance_data").insert({
       user_id: userId,
       data: initial as never,
     });
+    if (seedError) {
+      console.error("[finance] initial cloud save failed", seedError.message);
+      return;
+    }
   }
+  if (version !== hydrationVersion || currentUserId !== userId) return;
   cloudLoaded = true;
   listeners.forEach((l) => l());
 }
@@ -155,6 +166,7 @@ if (typeof window !== "undefined") {
       hydrateFromCloud(session.user.id);
     }
     if (event === "SIGNED_OUT") {
+      hydrationVersion++;
       currentUserId = null;
       cloudLoaded = false;
       memory = null;
