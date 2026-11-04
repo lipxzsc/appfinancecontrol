@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { csvEscape } from "@/lib/csv-security";
 import { computeReportBalances } from "@/lib/report-balances";
 import { formatBRL, type Transaction, type FinanceState, computeMonthBalances } from "@/lib/finance-store";
 import { RECEITA_CATEGORIES, DESPESA_CATEGORIES, labelForCategory } from "@/components/tx-helpers";
@@ -57,12 +58,6 @@ function triggerDownload(blob: Blob, filename: string) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
-}
-
-function csvEscape(v: string | number) {
-  const s = String(v);
-  if (/[;"\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
 }
 
 /** CSV pronto pra abrir no Excel pt-BR (separador `;`, vírgula decimal). */

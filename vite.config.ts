@@ -7,19 +7,15 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { loadEnv } from "vite";
 
-// Public (browser-safe) backend connection settings. Built-in fallbacks keep the
-// published app and external hosts (e.g. Netlify) working even when no .env
-// file is present at build time. Never put secret keys here.
-const FALLBACK_URL = "https://znsdugspwsikudnfspsu.supabase.co";
-const FALLBACK_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpuc2R1Z3Nwd3Npa3VkbmZzcHN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0ODYzOTMsImV4cCI6MjA5ODA2MjM5M30.ke74hB7u0bhk5QnSBo3jy4qdEFgXMIq-HSN8dh75HnQ";
+// Only public connection settings belong in the browser. Configure each host
+// explicitly instead of silently connecting to another deployment's backend.
 const publicEnv = loadEnv(process.env.NODE_ENV === "production" ? "production" : "development", process.cwd(), "VITE_");
 const publicConnection = {
   "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(
-    process.env.VITE_SUPABASE_URL || publicEnv.VITE_SUPABASE_URL || FALLBACK_URL,
+    process.env.VITE_SUPABASE_URL || publicEnv.VITE_SUPABASE_URL || "",
   ),
   "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(
-    process.env.VITE_SUPABASE_PUBLISHABLE_KEY || publicEnv.VITE_SUPABASE_PUBLISHABLE_KEY || FALLBACK_KEY,
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY || publicEnv.VITE_SUPABASE_PUBLISHABLE_KEY || "",
   ),
 };
 
