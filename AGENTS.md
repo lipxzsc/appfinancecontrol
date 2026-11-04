@@ -10,3 +10,6 @@
 <!-- LOVABLE:END -->
 
 - Monthly PDF and CSV reports share `computeReportBalances`; add registered investment principal to the existing operations balance without adding estimated yield twice.
+- Local Pro activation is development-only; production entitlement must come from verified backend payment events because browser storage is user-controlled.
+- Finance cloud hydration must never seed after a failed read and blocks writes until hydration succeeds, preventing financial data overwrite.
+- CSV exports neutralize formula-leading text through the shared CSV escaper because spreadsheet quoting alone is unsafe.

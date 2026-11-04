@@ -179,6 +179,10 @@ function AuthPage() {
             <ShieldCheck className="h-3.5 w-3.5 text-primary" />
             Seus dados ficam protegidos
           </div>
+          <p className="mt-3 text-center text-[11px] text-muted-foreground">
+            Ao continuar, você concorda com os <Link to="/termos" className="text-primary underline">Termos</Link> e a{" "}
+            <Link to="/privacidade" className="text-primary underline">Política de Privacidade</Link>.
+          </p>
         </section>
 
         <p className="mt-5 text-center text-xs text-muted-foreground">

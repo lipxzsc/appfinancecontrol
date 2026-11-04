@@ -19,6 +19,7 @@ import {
   cancelPro,
   PLAN_OPTIONS,
   FREE_LIMITS,
+  PAYMENT_SIMULATION_ENABLED,
 } from "@/lib/plan-store";
 
 /**
@@ -52,6 +53,12 @@ function PlanosPage() {
   }, [plan]);
 
   const handleSubscribe = (days: number, price: string) => {
+    if (!PAYMENT_SIMULATION_ENABLED) {
+      toast.info("Pagamento ainda não disponível", {
+        description: "Nenhuma cobrança foi feita. Os planos serão liberados após a configuração segura do pagamento.",
+      });
+      return;
+    }
     activatePro(days);
     toast.success(`🎉 Pro ativado por ${days} dias!`, {
       description: `Pagamento simulado de ${price}.`,
@@ -141,8 +148,12 @@ function PlanosPage() {
             />
           ))}
         </div>
-        <p className="text-center text-[10px] text-muted-foreground">
-          Pagamento simulado · ative à vontade pra testar
+        <p className="text-center text-[11px] text-muted-foreground">
+          {PAYMENT_SIMULATION_ENABLED
+            ? "Ambiente de testes: nenhuma cobrança real."
+            : "Pagamento indisponível no momento. Nenhuma cobrança será realizada."}{" "}
+          Consulte os <Link to="/termos" className="underline">Termos</Link> e a{" "}
+          <Link to="/privacidade" className="underline">Privacidade</Link>.
         </p>
       </section>
     </div>

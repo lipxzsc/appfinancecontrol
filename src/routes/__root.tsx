@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppLayout } from "../components/app-layout";
 import { Toaster } from "@/components/ui/sonner";
+import { StorageNotice } from "@/components/storage-notice";
 
 function NotFoundComponent() {
   return (
@@ -125,6 +126,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppLayout />
+      <StorageNotice />
       <Toaster position="top-center" />
     </QueryClientProvider>
   );
