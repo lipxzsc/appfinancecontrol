@@ -7,9 +7,8 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { loadEnv } from "vite";
 
-// Public (browser-safe) backend connection settings. Built-in fallbacks keep the
-// published app and external hosts (e.g. Netlify) working even when no .env
-// file is present at build time. Never put secret keys here.
+// Browser-safe publishable settings only; access is protected by row-level rules.
+// Published builds may lack host variables, so these public fallbacks prevent a blank app.
 const FALLBACK_URL = "https://znsdugspwsikudnfspsu.supabase.co";
 const FALLBACK_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpuc2R1Z3Nwd3Npa3VkbmZzcHN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0ODYzOTMsImV4cCI6MjA5ODA2MjM5M30.ke74hB7u0bhk5QnSBo3jy4qdEFgXMIq-HSN8dh75HnQ";

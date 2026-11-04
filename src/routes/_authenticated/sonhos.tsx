@@ -19,6 +19,10 @@ export const Route = createFileRoute("/_authenticated/sonhos")({
   head: () => ({
     meta: [
       { title: "Sonhos e metas — FinControl" },
+      { property: "og:title", content: "Sonhos e metas — FinControl" },
+      { property: "og:description", content: "Acompanhe depósitos e evolução das suas metas financeiras." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "description", content: "Planeje suas metas com aportes mensais e veja em quanto tempo conquistá-las." },
     ],
   }),

@@ -15,7 +15,7 @@ let currentUid: string | null = null;
 const listeners = new Set<() => void>();
 
 function readUntil(): number | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined" || !PAYMENT_SIMULATION_ENABLED) return null;
   const raw = window.localStorage.getItem(storageKey(currentUid));
   if (!raw) return null;
   const ts = parseInt(raw, 10);
@@ -24,7 +24,8 @@ function readUntil(): number | null {
 
 /** Soma `days` ao plano atual (ou inicia a partir de agora se expirado). */
 export function activatePro(days: number) {
-  if (typeof window === "undefined") return;
+  // Local activation is a development simulation, never a production entitlement.
+  if (typeof window === "undefined" || !PAYMENT_SIMULATION_ENABLED) return;
   const now = Date.now();
   const current = readUntil();
   const base = current && current > now ? current : now;
@@ -105,3 +106,5 @@ export const PLAN_OPTIONS = [
   { days: 15, priceLabel: "R$ 9,90", subtitle: "Curto prazo" },
   { days: 30, priceLabel: "R$ 14,90", subtitle: "Mais popular", highlight: true },
 ] as const;
+
+export const PAYMENT_SIMULATION_ENABLED = import.meta.env.DEV;

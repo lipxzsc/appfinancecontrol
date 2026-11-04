@@ -13,6 +13,10 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({
     meta: [
       { title: "Configurações — FinControl" },
+      { property: "og:title", content: "Configurações — FinControl" },
+      { property: "og:description", content: "Gerencie seu perfil e acesso ao FinControl." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "description", content: "Altere seu avatar, nome, e-mail e senha." },
     ],
   }),
