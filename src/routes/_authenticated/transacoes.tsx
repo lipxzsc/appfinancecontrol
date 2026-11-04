@@ -28,6 +28,10 @@ export const Route = createFileRoute("/_authenticated/transacoes")({
   head: () => ({
     meta: [
       { title: "Transações — FinControl" },
+      { property: "og:title", content: "Transações — FinControl" },
+      { property: "og:description", content: "Consulte receitas e despesas mensais por categoria no FinControl." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content: "Receitas e despesas do mês — as sobras vão pro próximo automaticamente.",

@@ -41,6 +41,10 @@ export const Route = createFileRoute("/_authenticated/orcamento")({
   head: () => ({
     meta: [
       { title: "Orçamento — FinControl" },
+      { property: "og:title", content: "Orçamento — FinControl" },
+      { property: "og:description", content: "Planeje limites por categoria e acompanhe despesas no FinControl." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "description", content: "Defina limites mensais por categoria e veja onde está gastando." },
     ],
   }),

@@ -90,8 +90,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "FinControl — Finanças pessoais" },
       { name: "twitter:description", content: "Controle de receitas, despesas, sonhos e investimentos com sobras carregando para o próximo mês." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/243f7c5c-d601-4d00-8df1-4f8778a32726/id-preview-bea8d05c--7c038c57-3eff-4455-94e7-2a849755ca92.lovable.app-1782501091362.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/243f7c5c-d601-4d00-8df1-4f8778a32726/id-preview-bea8d05c--7c038c57-3eff-4455-94e7-2a849755ca92.lovable.app-1782501091362.png" },
     ],
     links: [
       {

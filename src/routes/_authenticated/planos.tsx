@@ -30,6 +30,10 @@ export const Route = createFileRoute("/_authenticated/planos")({
   head: () => ({
     meta: [
       { title: "Planos — FinControl" },
+      { property: "og:title", content: "Planos — FinControl" },
+      { property: "og:description", content: "Planos Free e Pro para organizar suas finanças no FinControl." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content:

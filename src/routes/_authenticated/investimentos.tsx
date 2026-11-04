@@ -23,6 +23,10 @@ export const Route = createFileRoute("/_authenticated/investimentos")({
   head: () => ({
     meta: [
       { title: "Investimentos — FinControl" },
+      { property: "og:title", content: "Investimentos — FinControl" },
+      { property: "og:description", content: "Acompanhe investimentos e simule juros compostos no FinControl." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "description", content: "Simule investimentos em CDB, FIIs, Ações, Tesouro Direto com juros compostos." },
     ],
   }),
